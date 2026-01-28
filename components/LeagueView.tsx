@@ -320,14 +320,14 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                           </div>
                         )}
                       </div>
-                      <p className="font-mono text-[10px] text-slate-400 font-bold uppercase tracking-widest">Manager: {team.owner.split('@')[0]}</p>
+                      <p className="font-mono text-[11px] text-slate-500 font-bold uppercase tracking-wider">Manager: {team.owner.split('@')[0]}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-black text-slate-900 font-mono tracking-tighter">
+                    <div className="text-3xl font-black text-slate-900 font-mono tracking-tighter">
                       {team.totalPoints.toLocaleString()}
                     </div>
-                    <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Views</div>
+                    <div className="text-[11px] text-slate-500 font-black uppercase tracking-widest">Views</div>
                   </div>
                 </div>
 
@@ -336,9 +336,9 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                   <table className="w-full text-sm text-left border-separate border-spacing-0">
                     <thead>
                       <tr className="bg-slate-50/50">
-                        <th className="px-6 py-3 font-black text-[10px] text-slate-400 uppercase tracking-widest border-b border-slate-50">Show</th>
-                        <th className="px-6 py-3 font-black text-[10px] text-slate-400 uppercase tracking-widest text-right border-b border-slate-50">Delta</th>
-                        <th className="px-6 py-3 font-black text-[10px] text-slate-400 uppercase tracking-widest text-right border-b border-slate-50">Total</th>
+                        <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest border-b border-slate-100">Show</th>
+                        <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Delta</th>
+                        <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -348,16 +348,16 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                           onClick={() => onShowClick(show)}
                           className="group/row hover:bg-slate-50/80 transition-colors cursor-pointer"
                         >
-                          <td className="px-6 py-4">
-                            <div className="font-bold text-slate-700 group-hover/row:text-slate-900 transition-colors truncate max-w-[160px]">{show.title}</div>
-                            <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5">
-                              <span className={`w-1.5 h-1.5 rounded-full ${show.category === 'streaming' ? 'bg-purple-400' : 'bg-blue-400'}`}></span>
+                          <td className="px-6 py-5">
+                            <div className="font-black text-slate-800 group-hover/row:text-purple-700 transition-colors truncate max-w-[160px] text-base mb-0.5">{show.title}</div>
+                            <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 uppercase tracking-wide">
+                              <span className={`w-2 h-2 rounded-full ${show.category === 'streaming' ? 'bg-purple-500' : 'bg-blue-500'}`}></span>
                               {show.network}
                             </div>
                           </td>
                           <td className="px-6 py-4 text-right">
                             {show.lastPoints > 0 ? (
-                              <div className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100/50">
+                              <div className="inline-flex items-center gap-1 text-[12px] font-black text-emerald-700 bg-emerald-100/50 px-2.5 py-1.5 rounded-xl border border-emerald-200">
                                 +{show.lastPoints.toLocaleString()}
                               </div>
                             ) : (
@@ -365,7 +365,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                             )}
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="font-mono font-black text-slate-600 group-hover/row:text-slate-900">
+                            <div className="font-mono font-black text-[15px] text-slate-900 group-hover/row:text-purple-900 scale-105 origin-right transition-transform">
                               {show.cumulativeRating ? show.cumulativeRating.toLocaleString() : '0'}
                             </div>
                           </td>
