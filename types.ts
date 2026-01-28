@@ -48,4 +48,13 @@ export interface League {
   waiver_type: 'rolling' | 'faab' | 'fcfs';
 }
 
-export type ViewState = 'AUTH' | 'ONBOARDING' | 'DASHBOARD' | 'LEAGUE' | 'DRAFT' | 'WAITING_ROOM' | 'LEADERBOARD' | 'ADMIN';
+export interface UserProfile {
+  id: string;
+  display_name: string;
+  email: string;
+  avatar_url?: string;
+  color: string;
+  initials: string;
+}
+
+export type ViewState = 'AUTH' | 'ONBOARDING' | 'DASHBOARD' | 'LEAGUE' | 'DRAFT' | 'WAITING_ROOM' | 'LEADERBOARD' | 'ADMIN' | 'PROFILE';

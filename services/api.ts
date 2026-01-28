@@ -266,3 +266,52 @@ export const addShow = async (show: Partial<Show>) => {
   if (error) throw error;
   return data;
 };
+
+// --- Profile & User Settings ---
+
+export const fetchProfile = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    // If profile doesn't exist, we might want to create one on the fly
+    // but the trigger should handle it. For safety, return null.
+    console.error("Error fetching profile:", error);
+    return null;
+  }
+  return data;
+};
+
+export const fetchProfiles = async (userIds: string[]) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('id', userIds);
+
+  if (error) {
+    console.error("Error fetching profiles:", error);
+    return [];
+  }
+  return data;
+};
+
+export const updateProfile = async (userId: string, updates: any) => {
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId);
+
+  if (error) throw error;
+
+  // If email is updated, we also need to update it in Supabase Auth
+  if (updates.email) {
+    const { error: authError } = await supabase.auth.updateUser({ email: updates.email });
+    if (authError) throw authError;
+  }
+};

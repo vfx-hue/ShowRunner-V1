@@ -324,7 +324,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-black text-slate-900 font-mono tracking-wider">
+                    <div className="text-3xl font-bold text-slate-900 font-mono tracking-wider">
                       {team.totalPoints.toLocaleString()}
                     </div>
                     <div className="text-[11px] text-slate-500 font-black uppercase tracking-widest">Views</div>
@@ -357,7 +357,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                           </td>
                           <td className="px-6 py-4 text-right">
                             {show.lastPoints > 0 ? (
-                              <div className="inline-flex items-center gap-1 text-[12px] font-black text-emerald-700 bg-emerald-100/50 px-2.5 py-1.5 rounded-xl border border-emerald-200">
+                              <div className="inline-flex items-center gap-1 text-[12px] font-bold text-emerald-700 bg-emerald-100/50 px-2.5 py-1.5 rounded-xl border border-emerald-200">
                                 +{show.lastPoints.toLocaleString()}
                               </div>
                             ) : (
@@ -365,7 +365,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                             )}
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="font-mono font-black text-[15px] text-slate-900 group-hover/row:text-purple-900 transition-transform tracking-wider">
+                            <div className="font-mono font-semibold text-[15px] text-slate-900 group-hover/row:text-purple-900 transition-transform tracking-wider">
                               {show.cumulativeRating ? show.cumulativeRating.toLocaleString() : '0'}
                             </div>
                           </td>
