@@ -306,7 +306,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                 <div className="px-6 py-6 border-b border-slate-50 flex justify-between items-center bg-gradient-to-br from-white to-slate-50/30">
                   <div className="flex items-center gap-4">
                     <div
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-lg rotate-3 group-hover:rotate-0 transition-transform"
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-lg transition-transform"
                       style={{ backgroundColor: team.color, boxShadow: `0 8px 16px -4px ${team.color}66` }}
                     >
                       {team.initials}
@@ -324,7 +324,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-black text-slate-900 font-mono tracking-tighter">
+                    <div className="text-3xl font-black text-slate-900 font-mono tracking-wider">
                       {team.totalPoints.toLocaleString()}
                     </div>
                     <div className="text-[11px] text-slate-500 font-black uppercase tracking-widest">Views</div>
@@ -365,7 +365,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                             )}
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="font-mono font-black text-[15px] text-slate-900 group-hover/row:text-purple-900 scale-105 origin-right transition-transform">
+                            <div className="font-mono font-black text-[15px] text-slate-900 group-hover/row:text-purple-900 transition-transform tracking-wider">
                               {show.cumulativeRating ? show.cumulativeRating.toLocaleString() : '0'}
                             </div>
                           </td>
