@@ -13,12 +13,15 @@ import ShowDetailsModal from './components/ShowDetailsModal';
 import Standings from './components/Standings';
 import Leaderboard from './components/Leaderboard';
 import AdminShowDiscovery from './components/AdminShowDiscovery';
+import Profile from './components/Profile';
+import { UserProfile } from './types';
 import { Loader2, ChevronDown } from 'lucide-react';
 
 const TEAM_COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#10b981", "#f59e0b", "#3b82f6"];
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
 
   const [view, setView] = useState<ViewState>('AUTH');
@@ -85,15 +88,20 @@ const App: React.FC = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoadingSession(false);
-      if (session) setView('ONBOARDING');
+      if (session) {
+        setView('ONBOARDING');
+        api.fetchProfile(session.user.id).then(setUserProfile);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      if (event === 'SIGNED_IN') {
+      if (event === 'SIGNED_IN' && session) {
         setView('ONBOARDING');
+        api.fetchProfile(session.user.id).then(setUserProfile);
       } else if (!session) {
         setView('AUTH');
+        setUserProfile(null);
         localStorage.removeItem('active_league_id');
       }
     });
@@ -198,7 +206,12 @@ const App: React.FC = () => {
       // 2. Get Picks
       const picks = await api.fetchLeaguePicks(league.id);
 
-      // 3. Get Adjusted Scores from DB View
+      // 3. Get Targeted Stats (ONLY for shows mentioned in picks)
+      // This is the huge optimization to save Egress
+      const uniqueShowIds = Array.from(new Set(picks.map((p: any) => p.show_id).filter(Boolean))) as string[];
+      const historyData = await api.fetchShowStatsForLeague(uniqueShowIds);
+
+      // 4. Get Adjusted Scores from DB View
       const leagueScores = await api.getLeagueLeaderboard(league.id);
 
       const isLeagueFull = memberIds.length >= (league.max_members || 4);
@@ -214,7 +227,7 @@ const App: React.FC = () => {
         return;
       }
 
-      // 4. Prepare Activity Feed
+      // 5. Prepare Activity Feed & Roster Logic
       const resolvedPicks = picks.map(p => {
         const foundShow = currentShows.find(s => s.id === p.show_id || s.title === p.show_name);
         return {
@@ -229,17 +242,28 @@ const App: React.FC = () => {
 
       // 5. Build Teams
       const distinctUserIds = memberIds; // This is now ordered correctly from API
+      const profiles = await api.fetchProfiles(distinctUserIds);
 
       const builtTeams: Team[] = distinctUserIds.map((uid, index) => {
         const userPicks = picks.filter((p: any) => p.user_id === uid);
+        const profile = profiles.find((p: any) => p.id === uid);
+
         const roster: Show[] = userPicks.map((p: any) => {
           const masterShow = currentShows.find(s => s.id === p.show_id || s.title === p.show_name);
+          const showHistory = historyData.filter(h => h.show_id === p.show_id);
+
+          // Calculate cumulative rating and last points from history
+          const totalViews = showHistory.reduce((sum, entry) => sum + (entry.viewers || 0), 0);
+          const lastEntry = showHistory.length > 0 ? showHistory[showHistory.length - 1] : null;
 
           if (masterShow) {
             return {
               ...masterShow,
               status: 'drafted' as const,
-              draftedBy: uid
+              draftedBy: uid,
+              cumulativeRating: totalViews,
+              lastPoints: lastEntry ? lastEntry.viewers : 0,
+              viewershipHistory: showHistory
             };
           }
 
@@ -251,10 +275,11 @@ const App: React.FC = () => {
             premiereDate: 'N/A',
             description: 'Not found in database.',
             projectedRating: 0,
-            cumulativeRating: 0,
-            lastPoints: 0,
+            cumulativeRating: totalViews,
+            lastPoints: lastEntry ? lastEntry.viewers : 0,
             status: 'drafted' as const,
-            draftedBy: uid
+            draftedBy: uid,
+            viewershipHistory: showHistory
           };
         });
 
@@ -266,10 +291,10 @@ const App: React.FC = () => {
 
         return {
           id: uid as string,
-          name: uid === session?.user?.id ? 'My Team' : `Player ${index + 1}`,
-          owner: uid === session?.user?.id ? 'Me' : `User ${index + 1}`,
-          initials: uid === session?.user?.id ? 'ME' : `P${index + 1}`,
-          color: TEAM_COLORS[index % TEAM_COLORS.length],
+          name: profile ? profile.display_name : (uid === session?.user?.id ? 'My Team' : `Player ${index + 1}`),
+          owner: profile ? profile.email : (uid === session?.user?.id ? 'Me' : `User ${index + 1}`),
+          initials: profile ? profile.initials : (uid === session?.user?.id ? 'ME' : `P${index + 1}`),
+          color: profile ? profile.color : TEAM_COLORS[index % TEAM_COLORS.length],
           roster: roster,
           totalPoints: total
         };
@@ -364,8 +389,11 @@ const App: React.FC = () => {
         }}
         onNavigateLeaderboard={() => setView('LEADERBOARD')}
         onNavigateAdmin={() => setView('ADMIN')}
+        onNavigateProfile={() => setView('PROFILE')}
         onLogout={handleLogout}
+        userProfile={userProfile}
       />
+
 
       {joiningLeague && (
         <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center animate-fade-in">
@@ -421,8 +449,25 @@ const App: React.FC = () => {
               }
             }}
             existingShows={shows}
-            onShowAdded={() => {
-              api.fetchShowsFromSupabase().then(setShows);
+          />
+        )}
+
+        {view === 'PROFILE' && userProfile && (
+          <Profile
+            user={userProfile}
+            onBack={() => {
+              if (currentLeague) {
+                setView('LEAGUE');
+              } else {
+                setView('ONBOARDING');
+              }
+            }}
+            onUpdate={(updated) => {
+              setUserProfile(updated);
+              // If we are in a league, we should refresh the league data to see updated profile sitewide
+              if (currentLeague) {
+                loadLeagueData(currentLeague);
+              }
             }}
           />
         )}

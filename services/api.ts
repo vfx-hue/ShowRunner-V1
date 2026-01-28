@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase';
 // --- Data Fetching from Supabase ---
 
 export const fetchShowsFromSupabase = async (): Promise<Show[]> => {
-  // fetch shows and join viewership_data
+  // Only fetch show details. Avoid fetching the entire viewership_data history 
+  // until it's actually needed for a specific league or show view.
   const { data, error } = await supabase
     .from('shows')
     .select(`
@@ -14,11 +15,7 @@ export const fetchShowsFromSupabase = async (): Promise<Show[]> => {
       type,
       release_date,
       poster_url,
-      imdb_rating,
-      viewership_data (
-        rating_date,
-        viewers
-      )
+      imdb_rating
     `);
 
   if (error) {
@@ -27,48 +24,14 @@ export const fetchShowsFromSupabase = async (): Promise<Show[]> => {
   }
 
   return data.map((s: any) => {
-    const history = s.viewership_data || [];
-    // Sort by date ascending for charts
-    history.sort((a: any, b: any) => new Date(a.rating_date).getTime() - new Date(b.rating_date).getTime());
-
-    // Scoring: Sum of all viewers in viewership_data
-    const totalViewers = history.reduce((sum: number, entry: any) => sum + (entry.viewers || 0), 0);
-    const lastEntry = history[history.length - 1];
-
     // FIX: Category Detection (Case Insensitive)
     let category: 'cable' | 'streaming' = 'cable';
-
     if (s.type) {
       const lowerType = s.type.toLowerCase().trim();
-      if (lowerType === 'streaming') {
-        category = 'streaming';
-      } else {
-        // Default to cable if type exists but isn't streaming (e.g. 'cable', 'broadcast')
-        category = 'cable';
-      }
+      category = lowerType === 'streaming' ? 'streaming' : 'cable';
     } else {
-      // Fallback if type is null
       const streamingNetworks = ['Netflix', 'Hulu', 'Apple TV+', 'Prime Video', 'Disney+', 'Peacock', 'Max'];
       category = streamingNetworks.includes(s.network) ? 'streaming' : 'cable';
-    }
-
-    // FIX: Date Parsing (Handle "Already Aired" or Invalid Dates)
-    let premiereDate = 'TBD';
-    if (s.release_date) {
-      const rawDate = s.release_date.toString();
-      // Check if it's a special text status
-      if (rawDate.toLowerCase().includes('already aired')) {
-        premiereDate = 'Already Aired';
-      } else {
-        // Try parsing as date
-        const date = new Date(rawDate);
-        if (!isNaN(date.getTime())) {
-          premiereDate = date.toLocaleDateString();
-        } else {
-          // If invalid date format (e.g. "Fall 2026"), use the raw string
-          premiereDate = rawDate;
-        }
-      }
     }
 
     return {
@@ -76,17 +39,34 @@ export const fetchShowsFromSupabase = async (): Promise<Show[]> => {
       title: s.show_name,
       network: s.network || 'N/A',
       category: category,
-      premiereDate: premiereDate,
+      premiereDate: s.release_date || 'TBD',
       description: '',
       projectedRating: 0,
-      cumulativeRating: totalViewers,
-      lastPoints: lastEntry ? lastEntry.viewers : 0,
+      cumulativeRating: 0, // Will be calculated dynamically in league view
+      lastPoints: 0,
       status: 'available',
-      viewershipHistory: history,
+      viewershipHistory: [], // Only fill this when needed
       posterUrl: s.poster_url,
       imdbRating: s.imdb_rating
     };
   });
+};
+
+// NEW: Fetch specific viewership data for a set of shows to save Egress
+export const fetchShowStatsForLeague = async (showIds: string[]): Promise<any[]> => {
+  if (showIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('viewership_data')
+    .select('show_id, rating_date, viewers')
+    .in('show_id', showIds)
+    .order('rating_date', { ascending: true });
+
+  if (error) {
+    console.error("Error fetching Targeted Stats:", error);
+    return [];
+  }
+  return data;
 };
 
 export const fetchShowsFromSheet = async (): Promise<Show[]> => {
@@ -270,19 +250,22 @@ export const addShow = async (show: Partial<Show>) => {
 // --- Profile & User Settings ---
 
 export const fetchProfile = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
 
-  if (error) {
-    // If profile doesn't exist, we might want to create one on the fly
-    // but the trigger should handle it. For safety, return null.
-    console.error("Error fetching profile:", error);
+    if (error) {
+      if (error.code === 'PGRST116' || error.message.includes('not found')) return null;
+      console.error("Error fetching profile:", error.message);
+      return null;
+    }
+    return data;
+  } catch (e) {
     return null;
   }
-  return data;
 };
 
 export const fetchProfiles = async (userIds: string[]) => {

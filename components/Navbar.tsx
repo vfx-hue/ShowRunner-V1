@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
 import { Bell, ChevronDown, Tv, LogOut, User, Trophy } from 'lucide-react';
 
+import { UserProfile } from '../types';
+
 interface NavbarProps {
   onNavigateHome: () => void;
   onNavigateLeaderboard: () => void;
   onNavigateAdmin: () => void;
+  onNavigateProfile: () => void;
   onLogout: () => void;
+  userProfile: UserProfile | null;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onNavigateHome, onNavigateLeaderboard, onNavigateAdmin, onLogout }) => {
+const Navbar: React.FC<NavbarProps> = ({
+  onNavigateHome,
+  onNavigateLeaderboard,
+  onNavigateAdmin,
+  onNavigateProfile,
+  onLogout,
+  userProfile
+}) => {
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
@@ -47,9 +59,13 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigateHome, onNavigateLeaderboard, 
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-9 h-9 rounded-full bg-purple-100 border border-purple-200 flex items-center justify-center text-xs font-bold text-purple-700 cursor-pointer hover:bg-purple-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black text-white cursor-pointer transition-all hover:scale-105 active:scale-95 focus:outline-none shadow-lg"
+              style={{
+                backgroundColor: userProfile?.color || '#a855f7',
+                boxShadow: `0 4px 12px ${(userProfile?.color || '#a855f7')}44`
+              }}
             >
-              ME
+              {userProfile?.initials || 'ME'}
             </button>
 
             {isDropdownOpen && (
@@ -58,29 +74,36 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigateHome, onNavigateLeaderboard, 
                   className="fixed inset-0 z-10"
                   onClick={() => setIsDropdownOpen(false)}
                 ></div>
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100 z-20">
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">My Account</p>
+                <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl py-2 border border-slate-100 z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-3 border-b border-slate-50">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">My Account</p>
+                    <p className="text-sm font-bold text-slate-900 truncate mt-0.5">{userProfile?.display_name || 'Anonymous'}</p>
                   </div>
-                  <button
-                    className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-gray-50 hover:text-purple-600 flex items-center gap-2"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    <User className="w-4 h-4" /> Profile
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      onLogout();
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" /> Sign Out
-                  </button>
+                  <div className="p-1">
+                    <button
+                      className="w-full text-left px-3 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-purple-600 rounded-xl flex items-center gap-2 group transition-colors"
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        onNavigateProfile();
+                      }}
+                    >
+                      <User className="w-4 h-4 text-slate-400 group-hover:text-purple-500 transition-colors" /> Profile Settings
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        onLogout();
+                      }}
+                      className="w-full text-left px-3 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-2 group transition-colors"
+                    >
+                      <LogOut className="w-4 h-4 text-red-300 group-hover:text-red-500 transition-colors" /> Sign Out
+                    </button>
+                  </div>
                 </div>
               </>
             )}
           </div>
+
         </div>
       </div>
     </header>

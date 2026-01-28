@@ -7,13 +7,11 @@ import { Plus, Check, Search, Tv, Calendar, Info, Loader2, Sparkles, AlertCircle
 interface AdminShowDiscoveryProps {
     onBack: () => void;
     existingShows: Show[];
-    onShowAdded: () => void;
 }
 
-const AdminShowDiscovery: React.FC<AdminShowDiscoveryProps> = ({ onBack, existingShows, onShowAdded }) => {
+const AdminShowDiscovery: React.FC<AdminShowDiscoveryProps> = ({ onBack, existingShows }) => {
     const [upcomingShows, setUpcomingShows] = useState<Show[]>([]);
     const [loading, setLoading] = useState(true);
-    const [addingId, setAddingId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState<'all' | 'cable' | 'streaming'>('all');
 
@@ -31,20 +29,6 @@ const AdminShowDiscovery: React.FC<AdminShowDiscoveryProps> = ({ onBack, existin
         };
         loadUpcoming();
     }, []);
-
-    const handleAddShow = async (show: Show) => {
-        setAddingId(show.id);
-        try {
-            await addShow(show);
-            onShowAdded();
-            // Optionally remove from upcoming or mark as added locally
-        } catch (error) {
-            console.error("Error adding show", error);
-            alert("Failed to add show. It might already exist.");
-        } finally {
-            setAddingId(null);
-        }
-    };
 
     const isAlreadyInDatabase = (title: string) => {
         return existingShows.some(s => s.title.toLowerCase() === title.toLowerCase());
@@ -166,18 +150,9 @@ const AdminShowDiscovery: React.FC<AdminShowDiscoveryProps> = ({ onBack, existin
                                                 In Pool
                                             </div>
                                         ) : (
-                                            <button
-                                                onClick={() => handleAddShow(show)}
-                                                disabled={addingId === show.id}
-                                                className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-purple-600 transition-all shadow-lg shadow-slate-200 disabled:opacity-50 group-hover:scale-105"
-                                            >
-                                                {addingId === show.id ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <Plus className="w-4 h-4" />
-                                                )}
-                                                Add to Draft
-                                            </button>
+                                            <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-400 rounded-xl border border-slate-100 font-bold text-sm italic">
+                                                Pending Addition
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -195,8 +170,7 @@ const AdminShowDiscovery: React.FC<AdminShowDiscoveryProps> = ({ onBack, existin
                 <div>
                     <h4 className="text-indigo-900 font-black text-lg mb-1">Discovering New Talent</h4>
                     <p className="text-indigo-700 font-medium leading-relaxed">
-                        Shows added here will become immediately available for all leagues to draft.
-                        This tool uses AI to scan for upcoming premieres across major networks and streaming platforms.
+                        This tool uses Gemini to identify upcoming hits. Once you see a show you like, add it to the `shows` table in Supabase to make it draftable.
                     </p>
                 </div>
             </div>

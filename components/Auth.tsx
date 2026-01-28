@@ -6,6 +6,7 @@ const Auth: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [identifier, setIdentifier] = useState(''); // Email or Username
+  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'LOGIN' | 'SIGNUP'>('LOGIN');
   const [message, setMessage] = useState('');
@@ -35,15 +36,20 @@ const Auth: React.FC = () => {
 
     try {
       if (mode === 'LOGIN') {
-        const { error } = await supabase.auth.signInWithPassword({ 
-          email: emailToUse, 
-          password 
+        const { error } = await supabase.auth.signInWithPassword({
+          email: emailToUse,
+          password
         });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signUp({ 
-          email: emailToUse, 
-          password 
+        const { error } = await supabase.auth.signUp({
+          email: emailToUse,
+          password,
+          options: {
+            data: {
+              display_name: displayName || identifier.split('@')[0],
+            }
+          }
         });
         if (error) throw error;
         setMessage('Check your email for the confirmation link!');
@@ -55,6 +61,7 @@ const Auth: React.FC = () => {
     }
   };
 
+
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans">
       {/* Navbar */}
@@ -65,7 +72,7 @@ const Auth: React.FC = () => {
           </div>
           <span className="text-xl font-bold tracking-tight">ShowRunner</span>
         </div>
-        <button 
+        <button
           onClick={() => { setMode('LOGIN'); setShowModal(true); }}
           className="text-sm font-semibold text-slate-600 hover:text-purple-600 transition-colors"
         >
@@ -88,17 +95,17 @@ const Auth: React.FC = () => {
             <Star className="w-3 h-3" /> Season 2026 Live Now
           </div>
         )}
-        
+
         <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-6 max-w-4xl leading-tight">
           Fantasy Sports for <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">TV Addicts</span>
         </h1>
-        
+
         <p className="text-lg md:text-xl text-slate-500 max-w-2xl mb-10 leading-relaxed">
           Draft your favorite shows, track viewership ratings, and compete with friends to become the ultimate network executive.
         </p>
-        
+
         <div className="flex flex-col sm:flex-row gap-4">
-          <button 
+          <button
             onClick={() => { setMode('SIGNUP'); setShowModal(true); }}
             className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-slate-900 font-lg rounded-xl hover:bg-slate-800 hover:shadow-lg hover:-translate-y-0.5"
           >
@@ -137,27 +144,40 @@ const Auth: React.FC = () => {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
           <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 animate-slide-up">
-            <button 
+            <button
               onClick={() => setShowModal(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
             >
               <X className="w-5 h-5" />
             </button>
-            
+
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-slate-900">
                 {pendingInvite ? 'Join League' : (mode === 'LOGIN' ? 'Welcome Back' : 'Create Account')}
               </h2>
               <p className="text-slate-500 text-sm mt-1">
-                {pendingInvite 
-                   ? 'Sign up or login to accept your invitation' 
-                   : (mode === 'LOGIN' ? 'Enter your details to sign in' : 'Start your fantasy TV journey today')}
+                {pendingInvite
+                  ? 'Sign up or login to accept your invitation'
+                  : (mode === 'LOGIN' ? 'Enter your details to sign in' : 'Start your fantasy TV journey today')}
               </p>
             </div>
 
             <form onSubmit={handleAuth} className="space-y-4">
+              {mode === 'SIGNUP' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Display Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Maverick"
+                    className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                  />
+                </div>
+              )}
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email or Username</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{mode === 'LOGIN' ? 'Email or Username' : 'Email Address'}</label>
                 <input
                   type="text"
                   required
@@ -167,6 +187,7 @@ const Auth: React.FC = () => {
                   onChange={(e) => setIdentifier(e.target.value)}
                 />
               </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
                 <input
@@ -178,7 +199,7 @@ const Auth: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-              
+
               {message && (
                 <div className={`text-sm p-3 rounded-lg font-medium ${mode === 'SIGNUP' && !message.includes('error') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
                   {message}
