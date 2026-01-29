@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Show, Team, ViewState, League } from './types';
+import { Show, Team, ViewState, League, STANDARD_NETWORK_MULTIPLIER } from './types';
 import * as api from './services/api';
 import { supabase } from './lib/supabase';
 import Navbar from './components/Navbar';
@@ -253,7 +253,8 @@ const App: React.FC = () => {
           const showHistory = historyData.filter(h => h.show_id === p.show_id);
 
           // Calculate cumulative rating and last points from history
-          const totalViews = showHistory.reduce((sum, entry) => sum + (entry.viewers || 0), 0);
+          const multiplier = masterShow?.category === 'streaming' ? 1 : STANDARD_NETWORK_MULTIPLIER;
+          const totalViews = showHistory.reduce((sum, entry) => sum + (entry.viewers || 0) * multiplier, 0);
           const lastEntry = showHistory.length > 0 ? showHistory[showHistory.length - 1] : null;
 
           if (masterShow) {
@@ -272,7 +273,7 @@ const App: React.FC = () => {
             title: p.show_name || 'Unknown',
             network: 'N/A',
             category: 'cable',
-            premiereDate: 'N/A',
+            nextEpisodeDate: 'N/A',
             description: 'Not found in database.',
             projectedRating: 0,
             cumulativeRating: totalViews,

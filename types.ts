@@ -8,7 +8,7 @@ export interface Show {
   title: string;
   network: string;
   category: 'cable' | 'streaming';
-  premiereDate: string;
+  nextEpisodeDate?: string; // Maps from "Next Episode Date"
   description: string;
   projectedRating: number;
   cumulativeRating: number;
@@ -20,6 +20,7 @@ export interface Show {
   // New Fields
   posterUrl?: string;
   imdbRating?: number;
+  hype?: number; // Maps from "Hype"
 }
 
 export interface Team {
@@ -31,6 +32,8 @@ export interface Team {
   roster: Show[];
   totalPoints: number;
 }
+
+export const STANDARD_NETWORK_MULTIPLIER = 1.5;
 
 export interface League {
   id: string;
@@ -44,7 +47,6 @@ export interface League {
   // Settings
   cable_slots: number;
   streaming_slots: number;
-  network_multiplier: number;
   waiver_type: 'rolling' | 'faab' | 'fcfs';
 }
 

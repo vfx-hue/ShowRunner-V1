@@ -22,7 +22,8 @@ const ShowDetailsModal: React.FC<ShowDetailsModalProps> = ({
 }) => {
 
   // Helper to determine label for date
-  const isDate = !isNaN(Date.parse(show.premiereDate)) && !show.premiereDate.toLowerCase().includes('aired');
+  const displayDate = show.nextEpisodeDate || 'TBD';
+  const isDate = !isNaN(Date.parse(displayDate)) && !displayDate.toLowerCase().includes('aired');
 
   // Prepare Chart Data (Last 5 entries)
   const chartData = useMemo(() => {
@@ -90,10 +91,15 @@ const ShowDetailsModal: React.FC<ShowDetailsModalProps> = ({
                   <Star className="w-4 h-4 fill-current" /> {show.imdbRating}/10
                 </div>
               )}
-              {show.premiereDate && show.premiereDate !== 'TBD' && (
+              {displayDate && displayDate !== 'TBD' && (
                 <div className="flex items-center gap-1 text-slate-500 font-medium">
                   {isDate ? <Calendar className="w-4 h-4" /> : <Info className="w-4 h-4" />}
-                  {isDate ? 'Next Ep: ' : 'Status: '} {show.premiereDate}
+                  {isDate ? 'Next Ep: ' : 'Status: '} {displayDate}
+                </div>
+              )}
+              {show.hype !== undefined && (
+                <div className="flex items-center gap-1 text-purple-600 font-bold ml-auto">
+                  <TrendingUp className="w-4 h-4" /> Hype: {show.hype}
                 </div>
               )}
             </div>

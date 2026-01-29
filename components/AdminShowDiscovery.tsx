@@ -128,8 +128,8 @@ const AdminShowDiscovery: React.FC<AdminShowDiscoveryProps> = ({ onBack, existin
                                         <div className="flex items-center gap-3 text-slate-600">
                                             <div className="p-2 bg-slate-50 rounded-lg"><Calendar className="w-4 h-4" /></div>
                                             <div>
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Premiere</p>
-                                                <p className="font-bold text-sm text-purple-600">{show.premiereDate}</p>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Episode</p>
+                                                <p className="font-bold text-sm text-purple-600">{show.nextEpisodeDate || 'TBD'}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -140,8 +140,8 @@ const AdminShowDiscovery: React.FC<AdminShowDiscoveryProps> = ({ onBack, existin
 
                                     <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buzz Score</span>
-                                            <span className="text-lg font-black text-slate-900">{show.projectedRating}</span>
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hype Score</span>
+                                            <span className="text-lg font-black text-slate-900">{show.hype || show.projectedRating}</span>
                                         </div>
 
                                         {added ? (

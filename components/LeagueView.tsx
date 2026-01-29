@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Team, Show } from '../types';
+import { Team, Show, STANDARD_NETWORK_MULTIPLIER } from '../types';
 import { ArrowLeft, TrendingUp, Users, RefreshCw, UserPlus, Info } from 'lucide-react';
 import {
   AreaChart,
@@ -88,7 +88,8 @@ const LeagueView: React.FC<LeagueViewProps> = ({
           show.viewershipHistory?.forEach(entry => {
             const entryTs = normalizeDate(entry.rating_date);
             if (entryTs && entryTs <= ts) {
-              cumulativeForTeamAtTs += (entry.viewers || 0);
+              const multiplier = show.category === 'streaming' ? 1 : STANDARD_NETWORK_MULTIPLIER;
+              cumulativeForTeamAtTs += (entry.viewers || 0) * multiplier;
             }
           });
         });

@@ -11,11 +11,12 @@ export const fetchShowsFromSupabase = async (): Promise<Show[]> => {
     .select(`
       id,
       show_name,
-      network,
+      "Network/Streamer",
       type,
-      release_date,
+      "Next Episode Date",
       poster_url,
-      imdb_rating
+      imdb_rating,
+      "Hype"
     `);
 
   if (error) {
@@ -31,15 +32,16 @@ export const fetchShowsFromSupabase = async (): Promise<Show[]> => {
       category = lowerType === 'streaming' ? 'streaming' : 'cable';
     } else {
       const streamingNetworks = ['Netflix', 'Hulu', 'Apple TV+', 'Prime Video', 'Disney+', 'Peacock', 'Max'];
-      category = streamingNetworks.includes(s.network) ? 'streaming' : 'cable';
+      const network = s["Network/Streamer"] || '';
+      category = streamingNetworks.includes(network) ? 'streaming' : 'cable';
     }
 
     return {
       id: s.id,
       title: s.show_name,
-      network: s.network || 'N/A',
+      network: s["Network/Streamer"] || 'N/A',
       category: category,
-      premiereDate: s.release_date || 'TBD',
+      nextEpisodeDate: s["Next Episode Date"] || 'TBD',
       description: '',
       projectedRating: 0,
       cumulativeRating: 0, // Will be calculated dynamically in league view
@@ -47,7 +49,8 @@ export const fetchShowsFromSupabase = async (): Promise<Show[]> => {
       status: 'available',
       viewershipHistory: [], // Only fill this when needed
       posterUrl: s.poster_url,
-      imdbRating: s.imdb_rating
+      imdbRating: s.imdb_rating,
+      hype: s["Hype"] || 0
     };
   });
 };
@@ -148,7 +151,6 @@ export const createLeague = async (userId: string, name: string, draftStartTime:
       max_members: 4,
       cable_slots: 3, // Default
       streaming_slots: 3, // Default
-      network_multiplier: 1.5, // Default
       waiver_type: 'rolling' // Default
     })
     .select()
@@ -234,11 +236,12 @@ export const addShow = async (show: Partial<Show>) => {
     .from('shows')
     .insert({
       show_name: show.title,
-      network: show.network,
+      "Network/Streamer": show.network,
       type: show.category,
-      release_date: show.premiereDate,
+      "Next Episode Date": show.nextEpisodeDate,
       poster_url: show.posterUrl,
-      imdb_rating: show.imdbRating
+      imdb_rating: show.imdbRating,
+      "Hype": show.hype
     })
     .select()
     .single();
