@@ -153,7 +153,7 @@ const Auth: React.FC = () => {
               <Trophy className="w-5 h-5" />
             </div>
             <h3 className="text-lg font-bold text-slate-900 mb-2">Live Scoring</h3>
-            <p className="text-slate-500 text-sm">Points update weekly based on real-world Nielsen ratings and viewership data.</p>
+            <p className="text-slate-500 text-sm">Points update weekly based on real-world ratings and viewership data.</p>
           </div>
           <div className="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-gray-100 shadow-sm">
             <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mb-4 text-amber-600">
