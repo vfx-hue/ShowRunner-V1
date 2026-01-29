@@ -95,9 +95,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                 </div>
 
                 {/* Rating Badge */}
-                {show.imdbRating && (
+                {(show.cumulativeRating > 0 ? show.hype : show.imdbRating) && (
                   <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm text-yellow-400 px-1.5 py-0.5 rounded text-xs font-bold">
-                    <Star className="w-3 h-3 fill-current" /> {show.imdbRating}
+                    <Star className="w-3 h-3 fill-current" /> {show.cumulativeRating > 0 ? show.hype : show.imdbRating}
                   </div>
                 )}
 
@@ -106,7 +106,11 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                   <h3 className="text-white font-bold text-sm leading-tight drop-shadow-md truncate">{show.title}</h3>
                   <div className="flex justify-between items-end mt-1">
                     <span className="text-xs text-slate-300 font-medium bg-white/10 px-1.5 rounded backdrop-blur-md">{show.network}</span>
-                    <span className="text-xs font-mono text-emerald-400 font-bold">{(show.cumulativeRating / 1000000).toFixed(1)}M</span>
+                    <span className="text-xs font-mono text-emerald-400 font-bold">
+                      {show.cumulativeRating > 0
+                        ? `${(show.cumulativeRating / 1000000).toFixed(1)}M`
+                        : `Hype: ${show.hype || '0'}`}
+                    </span>
                   </div>
                 </div>
               </div>
