@@ -11,6 +11,8 @@ interface DraftBoardProps {
   isDrafting: boolean;
   isMyTurn?: boolean;
   currentDrafterName?: string;
+  addsRemaining?: number;
+  maxAdds?: number;
 }
 
 const DraftBoard: React.FC<DraftBoardProps> = ({
@@ -21,7 +23,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   onShowClick,
   isDrafting,
   isMyTurn = false,
-  currentDrafterName
+  currentDrafterName,
+  addsRemaining,
+  maxAdds
 }) => {
   const [sortBy, setSortBy] = useState<'hype' | 'viewers'>('hype');
   const [filterNetwork, setFilterNetwork] = useState<string>('All');
@@ -143,6 +147,20 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               </div>
             </div>
           )}
+
+          {addsRemaining !== undefined && (
+            <div className="bg-slate-900/50 border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3">
+              <TrendingUp className="w-4 h-4 text-purple-400" />
+              <div>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">
+                  Weekly Adds
+                </span>
+                <span className="block font-black text-sm text-white">
+                  {addsRemaining} / {maxAdds || 3} Left
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -219,7 +237,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                       : 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'}`}
                 >
                   {isDrafting && isMyTurn ? (
-                    'Draft'
+                    addsRemaining !== undefined ? 'Add' : 'Draft'
                   ) : (
                     <>
                       <Lock className="w-3 h-3" />

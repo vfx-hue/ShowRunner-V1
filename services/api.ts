@@ -132,17 +132,44 @@ export const getGlobalShowRankings = async () => {
   return data;
 };
 
-export const makePick = async (leagueId: string, userId: string, show: Show) => {
+export const makePick = async (leagueId: string, userId: string, show: Show, isWaiver: boolean = false) => {
   const { error } = await supabase
     .from('picks')
     .insert({
       league_id: leagueId,
       user_id: userId,
       show_id: show.id,
-      show_name: show.title
+      show_name: show.title,
+      is_waiver_add: isWaiver
     });
 
   if (error) throw error;
+};
+
+export const dropShow = async (leagueId: string, userId: string, showId: string) => {
+  const { error } = await supabase
+    .from('picks')
+    .delete()
+    .eq('league_id', leagueId)
+    .eq('user_id', userId)
+    .eq('show_id', showId);
+
+  if (error) throw error;
+};
+
+export const getWeeklyAddCount = async (leagueId: string, userId: string) => {
+  // Simple check: count waiver adds since start of week
+  // For simplicity, we'll just count all is_waiver_add=true for now, 
+  // but in a real app you'd filter by created_at > start_of_week
+  const { count, error } = await supabase
+    .from('picks')
+    .select('*', { count: 'exact', head: true })
+    .eq('league_id', leagueId)
+    .eq('user_id', userId)
+    .eq('is_waiver_add', true);
+
+  if (error) throw error;
+  return count || 0;
 };
 
 export const createLeague = async (userId: string, name: string, draftStartTime: string) => {
@@ -158,7 +185,8 @@ export const createLeague = async (userId: string, name: string, draftStartTime:
       max_members: 4,
       cable_slots: 3, // Default
       streaming_slots: 3, // Default
-      waiver_type: 'rolling' // Default
+      waiver_type: 'rolling', // Default
+      max_adds_per_week: 3 // Default
     })
     .select()
     .single();

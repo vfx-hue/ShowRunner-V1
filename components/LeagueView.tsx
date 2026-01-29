@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Team, Show, STANDARD_NETWORK_MULTIPLIER } from '../types';
-import { ArrowLeft, TrendingUp, Users, RefreshCw, UserPlus, Info, UserMinus } from 'lucide-react';
+import { ArrowLeft, Users, RefreshCw, UserPlus, Info, UserMinus, Settings } from 'lucide-react';
+import LeagueSettingsModal from './LeagueSettingsModal';
 import {
   AreaChart,
   Area,
@@ -42,6 +43,7 @@ interface LeagueViewProps {
   currentUserId: string;
   leagueManagerId: string;
   onRemoveMember: (userId: string) => void;
+  onDropShow?: (showId: string) => void;
 }
 
 const LeagueView: React.FC<LeagueViewProps> = ({
@@ -55,8 +57,10 @@ const LeagueView: React.FC<LeagueViewProps> = ({
   currentUserId,
   leagueManagerId,
   onRemoveMember,
+  onDropShow,
 }) => {
   const [hoveredTeamId, setHoveredTeamId] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const sortedTeams = [...teams].sort((a, b) => b.totalPoints - a.totalPoints);
 
   /* ---------------------------------------------
@@ -142,40 +146,37 @@ const LeagueView: React.FC<LeagueViewProps> = ({
               <h1 className="text-4xl font-black text-slate-900 tracking-tight">{leagueName}</h1>
               <div className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wider">Live</div>
             </div>
-            <div className="flex items-center gap-4 text-sm text-slate-500 font-semibold">
-              <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-slate-400" /> {teams.length} Managers</span>
-              <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-              <span className="flex items-center gap-1.5"><TrendingUp className="w-4 h-4 text-slate-400" /> 2026 Season</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => setShowSettings(true)}
+                className="flex items-center gap-2.5 bg-white border-2 border-slate-100 text-slate-700 hover:border-purple-200 hover:text-purple-700 px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm hover:shadow-md"
+              >
+                <Settings className="w-4 h-4" />
+                League Settings
+              </button>
+              <button
+                onClick={onWaiverWire}
+                className="flex items-center gap-2.5 bg-white border-2 border-slate-100 text-slate-700 hover:border-purple-200 hover:text-purple-700 px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm hover:shadow-md"
+              >
+                <UserPlus className="w-4 h-4" />
+                Waiver Wire
+              </button>
+              <button
+                onClick={onUpdateRatings}
+                disabled={loading}
+                className="flex items-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-xl shadow-slate-200 disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                {loading ? 'Refreshing...' : 'Sync Data'}
+              </button>
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onWaiverWire}
-            className="flex items-center gap-2.5 bg-white border-2 border-slate-100 text-slate-700 hover:border-purple-200 hover:text-purple-700 px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm hover:shadow-md"
-          >
-            <UserPlus className="w-4 h-4" />
-            Waiver Wire
-          </button>
-          <button
-            onClick={onUpdateRatings}
-            disabled={loading}
-            className="flex items-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-xl shadow-slate-200 disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            {loading ? 'Refreshing...' : 'Sync Data'}
-          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-8">
         {/* CHART SECTION (Premium Area Chart) */}
         <div className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-            <TrendingUp className="w-32 h-32 text-slate-900" />
-          </div>
-
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
               <div>
@@ -277,9 +278,6 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-[2rem] border-4 border-dashed border-slate-100">
-                  <div className="p-5 bg-white rounded-full shadow-sm mb-4">
-                    <TrendingUp className="w-8 h-8 text-slate-300" />
-                  </div>
                   <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Awaiting Season Data</p>
                   <p className="text-xs text-slate-400 mt-2 font-medium">Ratings start appearing after the first week</p>
                 </div>
@@ -353,8 +351,9 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                     <thead>
                       <tr className="bg-slate-50/50">
                         <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest border-b border-slate-100">Show</th>
-                        <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Delta</th>
+                        <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Weekly</th>
                         <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Total</th>
+                        <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -384,6 +383,22 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                             <div className="font-mono font-semibold text-[15px] text-slate-900 group-hover/row:text-purple-900 transition-transform tracking-wider">
                               {show.cumulativeRating ? show.cumulativeRating.toLocaleString() : '0'}
                             </div>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            {team.id === currentUserId && onDropShow && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm(`Are you sure you want to drop ${show.title}?`)) {
+                                    onDropShow(show.id);
+                                  }
+                                }}
+                                className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                title="Drop Show"
+                              >
+                                <UserMinus className="w-4 h-4" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}

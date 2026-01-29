@@ -48,6 +48,7 @@ export interface League {
   cable_slots: number;
   streaming_slots: number;
   waiver_type: 'rolling' | 'faab' | 'fcfs';
+  max_adds_per_week?: number;
 }
 
 export interface UserProfile {

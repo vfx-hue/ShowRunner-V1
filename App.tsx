@@ -33,6 +33,7 @@ const App: React.FC = () => {
   const [recentPicks, setRecentPicks] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const [joiningLeague, setJoiningLeague] = useState(false);
+  const [weeklyMovesCount, setWeeklyMovesCount] = useState<number>(0);
 
   // Show Details Modal State
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
@@ -70,7 +71,31 @@ const App: React.FC = () => {
     };
   }, [recentPicks.length, orderedMemberIds, teams]);
 
-  const isMyTurn = session?.user?.id === currentDrafterInfo.id;
+  const isDraftOver = useMemo(() => {
+    if (!currentLeague || orderedMemberIds.length === 0) return false;
+
+    // 1. If we've filled all slots, it's over
+    const maxSlots = (currentLeague.cable_slots || 3) + (currentLeague.streaming_slots || 3);
+    const totalPossiblePicks = orderedMemberIds.length * maxSlots;
+    if (recentPicks.length >= totalPossiblePicks) return true;
+
+    // 2. If any pick is explicitly a waiver add, it's over
+    if (recentPicks.some(p => p.is_waiver_add)) return true;
+
+    // 3. If it's been more than 12 hours since the draft started, assume it's over/in FA
+    if (currentLeague.draft_start_time) {
+      const startTime = new Date(currentLeague.draft_start_time).getTime();
+      const now = new Date().getTime();
+      if (now > startTime + (12 * 60 * 60 * 1000)) return true;
+    }
+
+    return false;
+  }, [currentLeague, orderedMemberIds, recentPicks]);
+
+  const isMyTurn = useMemo(() => {
+    if (isDraftOver) return true; // Anyone can move in free agency
+    return session?.user?.id === currentDrafterInfo.id;
+  }, [isDraftOver, session?.user?.id, currentDrafterInfo.id]);
 
 
   // 1. Check for invite code in URL on app mount
@@ -315,7 +340,7 @@ const App: React.FC = () => {
             return {
               ...masterShow,
               status: 'drafted' as const,
-              draftedBy: uid,
+              draftedBy: profile ? profile.display_name : uid,
               cumulativeRating: totalViews,
               lastPoints: lastEntry ? lastEntry.viewers : 0,
               viewershipHistory: masterShow.viewershipHistory
@@ -333,7 +358,7 @@ const App: React.FC = () => {
             cumulativeRating: totalViews,
             lastPoints: lastEntry ? lastEntry.viewers : 0,
             status: 'drafted' as const,
-            draftedBy: uid,
+            draftedBy: profile ? profile.display_name : uid,
             viewershipHistory: []
           };
         });
@@ -356,6 +381,12 @@ const App: React.FC = () => {
       });
 
       setTeams(builtTeams);
+
+      // 6. Fetch Waiver Stats
+      if (session?.user?.id) {
+        const moves = await api.getWeeklyAddCount(league.id, session.user.id);
+        setWeeklyMovesCount(moves);
+      }
 
       // Decide View
       const maxSlots = (league.cable_slots || 3) + (league.streaming_slots || 3);
@@ -402,10 +433,32 @@ const App: React.FC = () => {
     }
 
     try {
-      await api.makePick(currentLeague.id, session.user.id, show);
-      // Real-time subscription will update UI, but we can do optimistic update or wait
+      const isWaiver = isDraftOver;
+
+      // Enforce Waiver Limits
+      if (isWaiver && currentLeague) {
+        const limit = currentLeague.max_adds_per_week || 3;
+        if (weeklyMovesCount >= limit) {
+          alert(`You have reached your weekly add limit (${limit}).`);
+          return;
+        }
+      }
+
+      await api.makePick(currentLeague.id, session.user.id, show, isWaiver);
+      // Refresh to update counts
+      await loadLeagueData(currentLeague);
     } catch (e) {
-      alert("Failed to draft show.");
+      alert("Failed to draft/add show.");
+    }
+  };
+
+  const handleDropShow = async (showId: string) => {
+    if (!currentLeague || !session?.user) return;
+    try {
+      await api.dropShow(currentLeague.id, session.user.id, showId);
+      await loadLeagueData(currentLeague);
+    } catch (e) {
+      alert("Failed to drop show.");
     }
   };
 
@@ -607,6 +660,7 @@ const App: React.FC = () => {
             currentUserId={session.user.id}
             leagueManagerId={currentLeague.created_by}
             onRemoveMember={handleRemoveMember}
+            onDropShow={handleDropShow}
           />
         )}
 
@@ -634,6 +688,8 @@ const App: React.FC = () => {
                   onShowClick={setSelectedShow}
                   isMyTurn={isMyTurn}
                   currentDrafterName={currentDrafterInfo.name}
+                  addsRemaining={isDraftOver ? (currentLeague.max_adds_per_week || 3) - weeklyMovesCount : undefined}
+                  maxAdds={currentLeague.max_adds_per_week}
                 />
               </div>
 

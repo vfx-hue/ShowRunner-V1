@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { League, UserProfile } from '../types';
-import { Copy, Clock, Users, ArrowRight, Check, Link as LinkIcon, Settings, Save, X, Calendar, Sliders, Shield, Tv, UserMinus, Loader2 } from 'lucide-react';
+import { League } from '../types';
+import { Copy, Clock, Users, ArrowRight, Check, Link as LinkIcon, Settings, Calendar } from 'lucide-react';
 import * as api from '../services/api';
+import LeagueSettingsModal from './LeagueSettingsModal';
 
 interface LeagueWaitingRoomProps {
   league: League;
@@ -15,70 +16,12 @@ const LeagueWaitingRoom: React.FC<LeagueWaitingRoomProps> = ({ league, memberCou
   const [timeLeft, setTimeLeft] = useState<{ days: number, hours: number, minutes: number, seconds: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [isDraftReady, setIsDraftReady] = useState(false);
-
-  // Settings Modal State
   const [showSettings, setShowSettings] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [memberProfiles, setMemberProfiles] = useState<UserProfile[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
-  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
-
-  // Form State
-  const [formState, setFormState] = useState({
-    max_members: league.max_members || 4,
-    cable_slots: league.cable_slots || 3,
-    streaming_slots: league.streaming_slots || 3,
-    waiver_type: league.waiver_type || 'rolling',
-    draft_start_time: ''
-  });
 
   const maxMembers = league.max_members || 4;
   const isFull = memberCount >= maxMembers;
   const isManager = league.created_by === currentUserId;
   const inviteUrl = `${window.location.origin}/?league=${league.code}`;
-
-  // Helper to format Date for <input type="datetime-local" />
-  const formatForInput = (dateString: string | null) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const y = date.getFullYear();
-    const m = pad(date.getMonth() + 1);
-    const d = pad(date.getDate());
-    const hh = pad(date.getHours());
-    const mm = pad(date.getMinutes());
-    return `${y}-${m}-${d}T${hh}:${mm}`;
-  };
-
-  // Sync form with league data on load or modal open
-  useEffect(() => {
-    setFormState({
-      max_members: league.max_members || 4,
-      cable_slots: league.cable_slots || 3,
-      streaming_slots: league.streaming_slots || 3,
-      waiver_type: league.waiver_type || 'rolling',
-      draft_start_time: formatForInput(league.draft_start_time)
-    });
-  }, [league, showSettings]);
-
-  // Fetch Member Profiles
-  useEffect(() => {
-    const loadMembers = async () => {
-      setLoadingMembers(true);
-      try {
-        const memberIds = await api.fetchLeagueMembers(league.id);
-        const profiles = await api.fetchProfiles(memberIds);
-        setMemberProfiles(profiles);
-      } catch (e) {
-        console.error("Failed to load member profiles:", e);
-      } finally {
-        setLoadingMembers(false);
-      }
-    };
-    loadMembers();
-  }, [league.id, memberCount]);
 
   // Countdown Logic
   useEffect(() => {
@@ -113,54 +56,6 @@ const LeagueWaitingRoom: React.FC<LeagueWaitingRoomProps> = ({ league, memberCou
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleChange = (field: string, value: any) => {
-    setFormState(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveSettings = async () => {
-    setSaving(true);
-    try {
-      const isoDate = formState.draft_start_time ? new Date(formState.draft_start_time).toISOString() : null;
-
-      // 1. Send the update to Supabase
-      await api.updateLeague(league.id, {
-        max_members: Number(formState.max_members),
-        cable_slots: Number(formState.cable_slots),
-        streaming_slots: Number(formState.streaming_slots),
-        waiver_type: formState.waiver_type as any,
-        draft_start_time: isoDate
-      });
-
-      // 2. MANUALLY UPDATE THE LOCAL OBJECT
-      // This forces the progress bar and member count to re-calculate immediately
-      league.max_members = Number(formState.max_members);
-      league.draft_start_time = isoDate;
-
-      setShowSettings(false);
-      onRefresh(); // Still call this to sync with the parent/other users
-    } catch (e) {
-      alert("Failed to update settings.");
-      console.error(e);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleRemoveMember = async (userId: string) => {
-    if (!window.confirm("Are you sure you want to remove this member? This will also delete their draft picks.")) return;
-
-    setRemovingMemberId(userId);
-    try {
-      await api.removeLeagueMember(league.id, userId);
-      onRefresh(); // Refresh to update count and member list
-    } catch (e) {
-      alert("Failed to remove member.");
-      console.error(e);
-    } finally {
-      setRemovingMemberId(userId === removingMemberId ? null : removingMemberId);
-    }
-  };
-
   return (
     <div className="max-w-2xl mx-auto mt-12 px-4 animate-fade-in text-center relative">
       <div className="mb-8 relative">
@@ -169,14 +64,12 @@ const LeagueWaitingRoom: React.FC<LeagueWaitingRoomProps> = ({ league, memberCou
           <span className="bg-purple-100 text-purple-700 text-xs font-bold uppercase px-3 py-1 rounded-full">
             Waiting Room
           </span>
-          {isManager && (
-            <button
-              onClick={() => setShowSettings(true)}
-              className="flex items-center gap-1 bg-slate-900 text-white hover:bg-slate-800 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm"
-            >
-              <Settings className="w-3 h-3" /> League Manager Settings
-            </button>
-          )}
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center gap-1 bg-slate-900 text-white hover:bg-slate-800 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm"
+          >
+            <Settings className="w-3 h-3" /> {isManager ? 'League Manager Settings' : 'View League Settings'}
+          </button>
         </div>
       </div>
 
@@ -247,54 +140,6 @@ const LeagueWaitingRoom: React.FC<LeagueWaitingRoomProps> = ({ league, memberCou
             </div>
           </div>
 
-          {/* Member List */}
-          <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Users className="w-4 h-4" /> Current Managers
-            </h3>
-            {loadingMembers && memberProfiles.length === 0 ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {memberProfiles.map(profile => (
-                  <div key={profile.id} className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm border border-slate-100 group">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
-                        style={{ backgroundColor: profile.color }}
-                      >
-                        {profile.initials}
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-slate-900 leading-none mb-0.5">
-                          {profile.display_name} {profile.id === currentUserId && '(You)'}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-medium">{profile.email}</div>
-                      </div>
-                    </div>
-
-                    {isManager && profile.id !== currentUserId && (
-                      <button
-                        onClick={() => handleRemoveMember(profile.id)}
-                        disabled={!!removingMemberId}
-                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                        title="Remove Member"
-                      >
-                        {removingMemberId === profile.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-red-500" />
-                        ) : (
-                          <UserMinus className="w-4 h-4" />
-                        )}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           <div className="pt-8 border-t border-gray-100">
             {isFull && !isDraftReady && timeLeft && (
               <div className="grid grid-cols-4 gap-4 text-center">
@@ -338,70 +183,13 @@ const LeagueWaitingRoom: React.FC<LeagueWaitingRoomProps> = ({ league, memberCou
         </div>
       </div>
 
-      {/* Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg animate-slide-up relative my-8">
-            <button onClick={() => setShowSettings(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-              <X className="w-5 h-5" />
-            </button>
-
-            <h2 className="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2">
-              <Settings className="w-5 h-5 text-purple-600" /> League Manager Settings
-            </h2>
-            <p className="text-sm text-slate-500 mb-6 border-b border-gray-100 pb-4">Configure scoring and roster rules.</p>
-
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">League Size</label>
-                  <input
-                    type="number" max={10} min={2}
-                    value={formState.max_members}
-                    onChange={(e) => handleChange('max_members', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-sm font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Draft Time</label>
-                  <input
-                    type="datetime-local"
-                    value={formState.draft_start_time}
-                    onChange={(e) => handleChange('draft_start_time', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-xs font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2"><Tv className="w-4 h-4" /> Roster Slots</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cable Slots</label>
-                    <input type="number" value={formState.cable_slots} onChange={(e) => handleChange('cable_slots', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Streaming Slots</label>
-                    <input type="number" value={formState.streaming_slots} onChange={(e) => handleChange('streaming_slots', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm" />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1"><Shield className="w-3 h-3" /> Waiver Type</label>
-                <select value={formState.waiver_type} onChange={(e) => handleChange('waiver_type', e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm bg-white">
-                  <option value="rolling">Rolling Priority</option>
-                  <option value="faab">FAAB</option>
-                  <option value="fcfs">First Come First Served</option>
-                </select>
-              </div>
-
-              <button onClick={handleSaveSettings} disabled={saving} className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2">
-                {saving ? "Saving..." : <><Save className="w-4 h-4" /> Save Changes</>}
-              </button>
-            </div>
-          </div>
-        </div>
+        <LeagueSettingsModal
+          league={league}
+          currentUserId={currentUserId}
+          onClose={() => setShowSettings(false)}
+          onRefresh={onRefresh}
+        />
       )}
     </div>
   );
