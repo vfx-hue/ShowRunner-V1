@@ -144,7 +144,20 @@ const App: React.FC = () => {
   useEffect(() => {
     if (session?.user) {
       api.fetchShowsFromSupabase().then((fetchedShows) => {
-        setShows(fetchedShows);
+        const enrichedShows = fetchedShows.map(s => {
+          const multiplier = s.category === 'streaming' ? 1 : STANDARD_NETWORK_MULTIPLIER;
+          const totalViews = (s.viewershipHistory || []).reduce((sum, v) => sum + (v.viewers || 0) * multiplier, 0);
+          const lastEntry = s.viewershipHistory && s.viewershipHistory.length > 0
+            ? s.viewershipHistory[s.viewershipHistory.length - 1]
+            : null;
+
+          return {
+            ...s,
+            cumulativeRating: totalViews,
+            lastPoints: lastEntry ? lastEntry.viewers : 0
+          };
+        });
+        setShows(enrichedShows);
 
         api.fetchUserLeagues(session.user.id).then(leagues => {
           setUserLeagues(leagues);
@@ -157,7 +170,7 @@ const App: React.FC = () => {
             if (persistedLeagueId) {
               const target = leagues.find(l => l.id === persistedLeagueId);
               if (target) {
-                loadLeagueData(target, fetchedShows);
+                loadLeagueData(target, enrichedShows);
               }
             }
           }
@@ -206,10 +219,7 @@ const App: React.FC = () => {
       // 2. Get Picks
       const picks = await api.fetchLeaguePicks(league.id);
 
-      // 3. Get Targeted Stats (ONLY for shows mentioned in picks)
-      // This is the huge optimization to save Egress
-      const uniqueShowIds = Array.from(new Set(picks.map((p: any) => p.show_id).filter(Boolean))) as string[];
-      const historyData = await api.fetchShowStatsForLeague(uniqueShowIds);
+      // 3. (REMOVED) Get Targeted Stats - No longer needed as all viewership is pre-fetched
 
       // 4. Get Adjusted Scores from DB View
       const leagueScores = await api.getLeagueLeaderboard(league.id);
@@ -250,12 +260,12 @@ const App: React.FC = () => {
 
         const roster: Show[] = userPicks.map((p: any) => {
           const masterShow = currentShows.find(s => s.id === p.show_id || s.title === p.show_name);
-          const showHistory = historyData.filter(h => h.show_id === p.show_id);
 
-          // Calculate cumulative rating and last points from history
-          const multiplier = masterShow?.category === 'streaming' ? 1 : STANDARD_NETWORK_MULTIPLIER;
-          const totalViews = showHistory.reduce((sum, entry) => sum + (entry.viewers || 0) * multiplier, 0);
-          const lastEntry = showHistory.length > 0 ? showHistory[showHistory.length - 1] : null;
+          // Calculate cumulative rating and last points from pre-loaded history
+          const totalViews = masterShow ? masterShow.cumulativeRating : 0;
+          const lastEntry = (masterShow?.viewershipHistory && masterShow.viewershipHistory.length > 0)
+            ? masterShow.viewershipHistory[masterShow.viewershipHistory.length - 1]
+            : null;
 
           if (masterShow) {
             return {
@@ -264,7 +274,7 @@ const App: React.FC = () => {
               draftedBy: uid,
               cumulativeRating: totalViews,
               lastPoints: lastEntry ? lastEntry.viewers : 0,
-              viewershipHistory: showHistory
+              viewershipHistory: masterShow.viewershipHistory
             };
           }
 
@@ -280,7 +290,7 @@ const App: React.FC = () => {
             lastPoints: lastEntry ? lastEntry.viewers : 0,
             status: 'drafted' as const,
             draftedBy: uid,
-            viewershipHistory: showHistory
+            viewershipHistory: []
           };
         });
 

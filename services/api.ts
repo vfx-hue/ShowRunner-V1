@@ -16,7 +16,11 @@ export const fetchShowsFromSupabase = async (): Promise<Show[]> => {
       "Next Episode Date",
       poster_url,
       imdb_rating,
-      hype
+      hype,
+      viewership_data (
+        rating_date,
+        viewers
+      )
     `);
 
   if (error) {
@@ -47,7 +51,10 @@ export const fetchShowsFromSupabase = async (): Promise<Show[]> => {
       cumulativeRating: 0, // Will be calculated dynamically in league view
       lastPoints: 0,
       status: 'available',
-      viewershipHistory: [], // Only fill this when needed
+      viewershipHistory: (s.viewership_data || []).map((v: any) => ({
+        rating_date: v.rating_date,
+        viewers: v.viewers
+      })),
       posterUrl: s.poster_url,
       imdbRating: s.imdb_rating,
       hype: s.hype ? Number(s.hype) : 0
