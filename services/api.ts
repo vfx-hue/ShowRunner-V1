@@ -120,19 +120,53 @@ export const getLeagueLeaderboard = async (leagueId: string) => {
     return [];
   }
 
-  // 2. Fetch all shows to calculate their values
-  // (We could optimize this by only fetching picked shows, but for now fetch all to reuse logic)
-  const shows = await getGlobalShowRankings(); // Re-use the calculation logic
+  if (!picks || picks.length === 0) return [];
+
+  // 2. Fetch only relevant shows to calculate their values
+  // Extract unique Show IDs to fetch
+  const showIds = [...new Set(picks.map((p: any) => p.show_id))];
+
+  const { data: shows, error: showsError } = await supabase
+    .from('shows')
+    .select(`
+      id, 
+      show_name,
+      "Network/Streamer", 
+      type, 
+      viewership_data (viewers)
+    `)
+    .in('id', showIds);
+
+  if (showsError) {
+    console.error("Error fetching show stats for league:", showsError);
+    return [];
+  }
 
   // 3. Group by User and Calculate Total
   const userScores: Record<string, number> = {};
 
-  picks.forEach((pick: any) => {
-    let showPoints = 0;
-    const show = shows.find((s: any) => s.id === pick.show_id || s.show_name === pick.show_name);
-    if (show) {
-      showPoints = show.cumulative_viewership;
+  // Helper to calculate score for a show
+  const getShowScore = (show: any) => {
+    if (!show) return 0;
+
+    // Logic duplicated from getGlobalShowRankings for consistency
+    let category: 'cable' | 'streaming' = 'cable';
+    if (show.type) {
+      const lowerType = show.type.toLowerCase().trim();
+      category = lowerType === 'streaming' ? 'streaming' : 'cable';
+    } else {
+      const streamingNetworks = ['Netflix', 'Hulu', 'Apple TV+', 'Prime Video', 'Disney+', 'Peacock', 'Max'];
+      const network = show["Network/Streamer"] || '';
+      category = streamingNetworks.includes(network) ? 'streaming' : 'cable';
     }
+
+    const multiplier = category === 'streaming' ? 1 : 1.5;
+    return (show.viewership_data || []).reduce((acc: number, curr: any) => acc + (curr.viewers || 0) * multiplier, 0);
+  };
+
+  picks.forEach((pick: any) => {
+    const show = shows.find((s: any) => s.id === pick.show_id);
+    const showPoints = getShowScore(show);
 
     if (!userScores[pick.user_id]) userScores[pick.user_id] = 0;
     userScores[pick.user_id] += showPoints;
