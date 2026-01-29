@@ -628,6 +628,7 @@ const App: React.FC = () => {
                 <DraftBoard
                   availableShows={getAvailableShows()}
                   currentTeam={getCurrentUserTeam()}
+                  league={currentLeague}
                   onDraft={handleDraftShow}
                   isDrafting={true}
                   onShowClick={setSelectedShow}
