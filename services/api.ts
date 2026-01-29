@@ -16,7 +16,7 @@ export const fetchShowsFromSupabase = async (): Promise<Show[]> => {
       "Next Episode Date",
       poster_url,
       imdb_rating,
-      "Hype"
+      hype
     `);
 
   if (error) {
@@ -50,7 +50,7 @@ export const fetchShowsFromSupabase = async (): Promise<Show[]> => {
       viewershipHistory: [], // Only fill this when needed
       posterUrl: s.poster_url,
       imdbRating: s.imdb_rating,
-      hype: s["Hype"] || 0
+      hype: s.hype ? Number(s.hype) : 0
     };
   });
 };
@@ -241,7 +241,7 @@ export const addShow = async (show: Partial<Show>) => {
       "Next Episode Date": show.nextEpisodeDate,
       poster_url: show.posterUrl,
       imdb_rating: show.imdbRating,
-      "Hype": show.hype
+      hype: show.hype
     })
     .select()
     .single();
