@@ -302,9 +302,22 @@ export const updateProfile = async (userId: string, updates: any) => {
 
   if (error) throw error;
 
-  // If email is updated, we also need to update it in Supabase Auth
-  if (updates.email) {
-    const { error: authError } = await supabase.auth.updateUser({ email: updates.email });
+  // Sync to Auth Metadata to ensure synchronization "from both sides"
+  const authUpdates: any = {};
+  if (updates.email) authUpdates.email = updates.email;
+
+  // Sync display_name and color to user_metadata
+  const metadata: any = {};
+  if (updates.display_name) metadata.display_name = updates.display_name;
+  if (updates.color) metadata.color = updates.color;
+  if (updates.initials) metadata.initials = updates.initials;
+
+  if (Object.keys(metadata).length > 0) {
+    authUpdates.data = metadata;
+  }
+
+  if (Object.keys(authUpdates).length > 0) {
+    const { error: authError } = await supabase.auth.updateUser(authUpdates);
     if (authError) throw authError;
   }
 };

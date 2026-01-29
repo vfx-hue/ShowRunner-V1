@@ -90,7 +90,29 @@ const App: React.FC = () => {
       setLoadingSession(false);
       if (session) {
         setView('ONBOARDING');
-        api.fetchProfile(session.user.id).then(setUserProfile);
+        api.fetchProfile(session.user.id).then(async (profile) => {
+          if (profile) {
+            setUserProfile(profile);
+          } else {
+            // FALLBACK: Create profile if missing (e.g. trigger didn't run yet)
+            console.log("Profile missing, creating fallback...");
+            const email = session.user.email || '';
+            const displayName = session.user.user_metadata?.display_name || email.split('@')[0];
+            const initials = session.user.user_metadata?.initials || displayName.substring(0, 2).toUpperCase();
+            const color = session.user.user_metadata?.color || '#8b5cf6';
+
+            const newProfile = {
+              id: session.user.id,
+              display_name: displayName,
+              email: email,
+              initials: initials,
+              color: color
+            };
+
+            await supabase.from('profiles').insert(newProfile);
+            setUserProfile(newProfile as any);
+          }
+        });
       }
     });
 
@@ -98,7 +120,29 @@ const App: React.FC = () => {
       setSession(session);
       if (event === 'SIGNED_IN' && session) {
         setView('ONBOARDING');
-        api.fetchProfile(session.user.id).then(setUserProfile);
+        api.fetchProfile(session.user.id).then(async (profile) => {
+          if (profile) {
+            setUserProfile(profile);
+          } else {
+            // FALLBACK: Create profile if missing
+            console.log("Profile missing on auth change, creating fallback...");
+            const email = session.user.email || '';
+            const displayName = session.user.user_metadata?.display_name || email.split('@')[0];
+            const initials = session.user.user_metadata?.initials || displayName.substring(0, 2).toUpperCase();
+            const color = session.user.user_metadata?.color || '#8b5cf6';
+
+            const newProfile = {
+              id: session.user.id,
+              display_name: displayName,
+              email: email,
+              initials: initials,
+              color: color
+            };
+
+            await supabase.from('profiles').insert(newProfile);
+            setUserProfile(newProfile as any);
+          }
+        });
       } else if (!session) {
         setView('AUTH');
         setUserProfile(null);
