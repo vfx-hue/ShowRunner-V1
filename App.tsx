@@ -367,7 +367,28 @@ const App: React.FC = () => {
 
   const getAvailableShows = () => {
     const draftedIds = new Set(teams.flatMap(t => t.roster.map(r => r.id)));
-    return shows.filter(s => !draftedIds.has(s.id));
+    let available = shows.filter(s => !draftedIds.has(s.id));
+
+    // Enforcement: If we are in DRAFT view and have a current team, filter by slots
+    if (view === 'DRAFT' && currentLeague) {
+      const myTeam = getCurrentUserTeam();
+      if (myTeam) {
+        const cableCount = myTeam.roster.filter(s => s.category === 'cable').length;
+        const streamingCount = myTeam.roster.filter(s => s.category === 'streaming').length;
+
+        const cableLimit = currentLeague.cable_slots || 3;
+        const streamingLimit = currentLeague.streaming_slots || 3;
+
+        if (cableCount >= cableLimit) {
+          available = available.filter(s => s.category !== 'cable');
+        }
+        if (streamingCount >= streamingLimit) {
+          available = available.filter(s => s.category !== 'streaming');
+        }
+      }
+    }
+
+    return available;
   };
 
   const getCurrentUserTeam = () => {
