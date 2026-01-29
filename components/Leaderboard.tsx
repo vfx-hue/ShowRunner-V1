@@ -205,7 +205,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ onBack }) => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        {show.posterUrl ? (
+                        {show.posterUrl && show.posterUrl.startsWith('http') ? (
                           <img src={show.posterUrl} alt="" className="w-10 h-14 object-cover rounded shadow-sm bg-slate-200" />
                         ) : (
                           <div className="w-10 h-14 bg-slate-100 rounded flex items-center justify-center text-slate-300">

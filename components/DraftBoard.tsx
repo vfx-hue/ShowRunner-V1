@@ -70,7 +70,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                 className="relative aspect-[2/3] w-full cursor-pointer overflow-hidden"
                 onClick={() => onShowClick(show)}
               >
-                {show.posterUrl ? (
+                {show.posterUrl && show.posterUrl.startsWith('http') ? (
                   <img
                     src={show.posterUrl}
                     alt={show.title}

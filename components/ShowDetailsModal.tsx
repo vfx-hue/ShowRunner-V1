@@ -56,7 +56,7 @@ const ShowDetailsModal: React.FC<ShowDetailsModalProps> = ({
 
         {/* Poster Side */}
         <div className="w-full md:w-2/5 h-64 md:h-auto bg-slate-100 relative shrink-0">
-          {show.posterUrl ? (
+          {show.posterUrl && show.posterUrl.startsWith('http') ? (
             <img src={show.posterUrl} alt={show.title} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-400">
