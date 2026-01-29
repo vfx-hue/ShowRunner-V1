@@ -14,6 +14,7 @@ import Standings from './components/Standings';
 import Leaderboard from './components/Leaderboard';
 import GlobalTeamLeaderboard from './components/GlobalTeamLeaderboard';
 import Profile from './components/Profile';
+import WaiverTransactionModal from './components/WaiverTransactionModal';
 import { UserProfile } from './types';
 import { Loader2, ChevronDown } from 'lucide-react';
 
@@ -38,6 +39,10 @@ const App: React.FC = () => {
 
   // Show Details Modal State
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
+
+  // Waiver Modal State
+  const [showWaiverModal, setShowWaiverModal] = useState(false);
+  const [waiverShowToAdd, setWaiverShowToAdd] = useState<Show | null>(null);
 
   // Draft Logic State
   const [orderedMemberIds, setOrderedMemberIds] = useState<string[]>([]);
@@ -458,6 +463,12 @@ const App: React.FC = () => {
           alert(`You have reached your weekly add limit (${limit}).`);
           return;
         }
+
+        // --- OPEN WAIVER MODAL INSTEAD OF DIRECT ADD ---
+        // We set the show to add, and open the modal.
+        setWaiverShowToAdd(show);
+        setShowWaiverModal(true);
+        return;
       }
 
       await api.makePick(currentLeague.id, session.user.id, show, isWaiver);
@@ -465,6 +476,24 @@ const App: React.FC = () => {
       await loadLeagueData(currentLeague);
     } catch (e) {
       alert("Failed to draft/add show.");
+    }
+  };
+
+  const handleWaiverConfirm = async (dropShowId: string | null) => {
+    if (!currentLeague || !session?.user || !waiverShowToAdd) return;
+    try {
+      // 1. Drop if selected
+      if (dropShowId) {
+        await api.dropShow(currentLeague.id, session.user.id, dropShowId);
+      }
+      // 2. Add
+      await api.makePick(currentLeague.id, session.user.id, waiverShowToAdd, true);
+
+      // 3. Refresh
+      await loadLeagueData(currentLeague);
+    } catch (e) {
+      alert("Transaction failed. Please try again.");
+      console.error(e);
     }
   };
 
@@ -567,6 +596,19 @@ const App: React.FC = () => {
           isDraftable={view === 'DRAFT' && getAvailableShows().some(s => s.id === selectedShow.id)}
           isMyTurn={isMyTurn}
           currentDrafterName={currentDrafterInfo.name}
+        />
+      )}
+
+      {showWaiverModal && waiverShowToAdd && (
+        <WaiverTransactionModal
+          showToAdd={waiverShowToAdd}
+          currentTeam={getCurrentUserTeam()!}
+          onConfirm={handleWaiverConfirm}
+          onClose={() => {
+            setShowWaiverModal(false);
+            setWaiverShowToAdd(null);
+          }}
+          maxRosterSize={(currentLeague?.cable_slots || 3) + (currentLeague?.streaming_slots || 3)}
         />
       )}
 
