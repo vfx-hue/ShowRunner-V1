@@ -7,9 +7,11 @@ interface DashboardProps {
   onSelectLeague: () => void;
   recentPicks: any[];
   currentUserId: string;
+  showCooldown?: boolean;
+  league?: any;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ teams, onSelectLeague, recentPicks, currentUserId }) => {
+const Dashboard: React.FC<DashboardProps> = ({ teams, onSelectLeague, recentPicks, currentUserId, showCooldown, league }) => {
   // Sort teams by points
   const sortedTeams = [...teams].sort((a, b) => b.totalPoints - a.totalPoints);
 
@@ -46,8 +48,13 @@ const Dashboard: React.FC<DashboardProps> = ({ teams, onSelectLeague, recentPick
                   {team.initials}
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-900 group-hover:text-purple-700 transition-colors">
+                  <div className="font-semibold text-slate-900 group-hover:text-purple-700 transition-colors flex items-center gap-2">
                     {team.name}
+                    {team.id === currentUserId && showCooldown && (
+                      <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100 flex items-center gap-1">
+                        Cooldown Pending
+                      </span>
+                    )}
                   </div>
                   {/* Removed team.owner display */}
                 </div>

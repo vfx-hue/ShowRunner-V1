@@ -28,7 +28,8 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
         cable_slots: league.cable_slots || 3,
         streaming_slots: league.streaming_slots || 3,
         waiver_type: league.waiver_type || 'rolling',
-        draft_start_time: ''
+        draft_start_time: '',
+        waiver_cooldown_days: league.waiver_cooldown_days || 7
     });
 
     const isManager = league.created_by === currentUserId;
@@ -47,7 +48,8 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
             cable_slots: league.cable_slots || 3,
             streaming_slots: league.streaming_slots || 3,
             waiver_type: league.waiver_type || 'rolling',
-            draft_start_time: formatForInput(league.draft_start_time)
+            draft_start_time: formatForInput(league.draft_start_time),
+            waiver_cooldown_days: league.waiver_cooldown_days || 7
         });
     }, [league]);
 
@@ -82,7 +84,8 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                 cable_slots: Number(formState.cable_slots),
                 streaming_slots: Number(formState.streaming_slots),
                 waiver_type: formState.waiver_type as any,
-                draft_start_time: isoDate
+                draft_start_time: isoDate,
+                waiver_cooldown_days: Number(formState.waiver_cooldown_days)
             });
             onRefresh();
             onClose();
@@ -188,6 +191,17 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                             <option value="faab">FAAB</option>
                             <option value="fcfs">First Come First Served</option>
                         </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1">Waiver Cooldown (Days)</label>
+                        <input
+                            type="number"
+                            disabled={!isManager}
+                            value={formState.waiver_cooldown_days}
+                            onChange={(e) => handleChange('waiver_cooldown_days', e.target.value)}
+                            className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm disabled:bg-slate-50 disabled:text-slate-500"
+                        />
                     </div>
 
                     {/* Member List Section */}

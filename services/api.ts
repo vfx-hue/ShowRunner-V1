@@ -133,31 +133,46 @@ export const getGlobalShowRankings = async () => {
 };
 
 export const getGlobalTeamRankings = async () => {
-  // We want to join adjusted_league_scores with profiles and leagues
-  // Since we can't do complex joins easily in supabase-js without a view,
-  // we'll assume adjusted_league_scores has the fields or fetch supplementary data.
-  // Actually, let's fetch from the view and join manually or use a more comprehensive view.
-  const { data, error } = await supabase
+  // Fetch top 50 scores
+  const { data: scores, error: scoresError } = await supabase
     .from('adjusted_league_scores')
-    .select(`
-      *,
-      leagues (
-        name
-      ),
-      profiles (
-        display_name,
-        color,
-        initials
-      )
-    `)
+    .select('*')
     .order('adjusted_total_points', { ascending: false })
     .limit(50);
 
-  if (error) {
-    console.error("Error fetching global team rankings:", error);
+  if (scoresError) {
+    console.error("Error fetching global team rankings:", scoresError);
     return [];
   }
-  return data;
+
+  if (!scores || scores.length === 0) return [];
+
+  // Collect IDs
+  const userIds = [...new Set(scores.map((s: any) => s.user_id))];
+  const leagueIds = [...new Set(scores.map((s: any) => s.league_id))];
+
+  // Fetch Profiles
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, display_name, color, initials')
+    .in('id', userIds);
+
+  // Fetch Leagues
+  const { data: leagues } = await supabase
+    .from('leagues')
+    .select('id, name')
+    .in('id', leagueIds);
+
+  // Merge Data
+  return scores.map((score: any) => {
+    const profile = profiles?.find(p => p.id === score.user_id);
+    const league = leagues?.find(l => l.id === score.league_id);
+    return {
+      ...score,
+      profiles: profile || { display_name: 'Unknown', color: '#cbd5e1', initials: '??' },
+      leagues: league || { name: 'Unknown League' }
+    };
+  });
 };
 
 export const makePick = async (leagueId: string, userId: string, show: Show, isWaiver: boolean = false) => {

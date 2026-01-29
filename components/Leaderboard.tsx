@@ -8,7 +8,7 @@ interface LeaderboardProps {
   onShowClick: (show: Show) => void;
 }
 
-type SortField = 'cumulativeRating' | 'title' | 'network' | 'imdbRating' | 'hype';
+type SortField = 'cumulativeRating' | 'network' | 'imdbRating' | 'hype';
 
 const Leaderboard: React.FC<LeaderboardProps> = ({ onBack, onShowClick }) => {
   const [shows, setShows] = useState<Show[]>([]);
@@ -128,7 +128,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ onBack, onShowClick }) => {
             <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
               <Star className="w-10 h-10 text-purple-600 drop-shadow-sm" /> Global Rankings
             </h1>
-            <p className="text-slate-500 font-medium tracking-tight">Real-time performance of every show in the multiverse.</p>
           </div>
         </div>
 
@@ -137,8 +136,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ onBack, onShowClick }) => {
           {[
             { label: 'Views', field: 'cumulativeRating' as const },
             { label: 'Hype', field: 'hype' as const },
-            { label: 'Stars', field: 'imdbRating' as const },
-            { label: 'A-Z', field: 'title' as const }
+            { label: 'Stars', field: 'imdbRating' as const }
           ].map((option) => (
             <button
               key={option.field}
@@ -169,7 +167,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ onBack, onShowClick }) => {
             onClick={() => setCategoryFilter('all')}
             className={`flex-1 lg:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${categoryFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            All Access
+            All
           </button>
           <button
             onClick={() => setCategoryFilter('cable')}

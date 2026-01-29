@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [loadingData, setLoadingData] = useState(false);
   const [joiningLeague, setJoiningLeague] = useState(false);
   const [weeklyMovesCount, setWeeklyMovesCount] = useState<number>(0);
+  const [lastWaiverAddDate, setLastWaiverAddDate] = useState<string | null>(null);
 
   // Show Details Modal State
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
@@ -91,6 +92,14 @@ const App: React.FC = () => {
 
     return false;
   }, [currentLeague, orderedMemberIds, recentPicks]);
+
+  const showCooldown = useMemo(() => {
+    if (!lastWaiverAddDate || !currentLeague?.waiver_cooldown_days) return false;
+    const cooldownMs = (currentLeague.waiver_cooldown_days || 7) * 24 * 60 * 60 * 1000;
+    const lastAdd = new Date(lastWaiverAddDate).getTime();
+    const now = new Date().getTime();
+    return now < lastAdd + cooldownMs;
+  }, [lastWaiverAddDate, currentLeague?.waiver_cooldown_days]);
 
   const isMyTurn = useMemo(() => {
     if (isDraftOver) return true; // Anyone can move in free agency
@@ -385,7 +394,9 @@ const App: React.FC = () => {
       // 6. Fetch Waiver Stats
       if (session?.user?.id) {
         const moves = await api.getWeeklyAddCount(league.id, session.user.id);
+        const latestAdd = await api.getLatestWaiverAdd(league.id, session.user.id);
         setWeeklyMovesCount(moves);
+        setLastWaiverAddDate(latestAdd);
       }
 
       // Decide View
@@ -435,8 +446,13 @@ const App: React.FC = () => {
     try {
       const isWaiver = isDraftOver;
 
-      // Enforce Waiver Limits
+      // Enforce Waiver Limits & Cooldown
       if (isWaiver && currentLeague) {
+        if (showCooldown) {
+          alert(`You are currently on waiver cooldown. Next move available in few days.`);
+          return;
+        }
+
         const limit = currentLeague.max_adds_per_week || 3;
         if (weeklyMovesCount >= limit) {
           alert(`You have reached your weekly add limit (${limit}).`);
@@ -640,6 +656,8 @@ const App: React.FC = () => {
               onSelectLeague={() => setView('LEAGUE')}
               recentPicks={recentPicks}
               currentUserId={session.user.id}
+              showCooldown={showCooldown}
+              league={currentLeague}
             />
           </>
         )}
@@ -691,6 +709,7 @@ const App: React.FC = () => {
                   currentDrafterName={currentDrafterInfo.name}
                   addsRemaining={isDraftOver ? (currentLeague.max_adds_per_week || 3) - weeklyMovesCount : undefined}
                   maxAdds={currentLeague.max_adds_per_week}
+                  viewMode={isDraftOver ? 'waiver' : 'draft'}
                 />
               </div>
 
