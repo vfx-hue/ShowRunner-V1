@@ -224,6 +224,26 @@ export const joinLeague = async (userId: string, code: string) => {
   };
 };
 
+export const removeLeagueMember = async (leagueId: string, userId: string) => {
+  // 1. Delete member's picks for this league
+  const { error: picksError } = await supabase
+    .from('picks')
+    .delete()
+    .eq('league_id', leagueId)
+    .eq('user_id', userId);
+
+  if (picksError) throw picksError;
+
+  // 2. Remove member from the league
+  const { error: memberError } = await supabase
+    .from('league_members')
+    .delete()
+    .eq('league_id', leagueId)
+    .eq('user_id', userId);
+
+  if (memberError) throw memberError;
+};
+
 export const fetchUserLeagues = async (userId: string) => {
   const { data, error } = await supabase
     .from('league_members')

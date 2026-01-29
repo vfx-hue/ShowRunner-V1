@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { League } from '../types';
-import { Copy, Clock, Users, ArrowRight, Check, Link as LinkIcon, Settings, Save, X, Calendar, Sliders, Shield, Tv } from 'lucide-react';
+import { League, UserProfile } from '../types';
+import { Copy, Clock, Users, ArrowRight, Check, Link as LinkIcon, Settings, Save, X, Calendar, Sliders, Shield, Tv, UserMinus, Loader2 } from 'lucide-react';
 import * as api from '../services/api';
 
 interface LeagueWaitingRoomProps {
@@ -19,6 +19,9 @@ const LeagueWaitingRoom: React.FC<LeagueWaitingRoomProps> = ({ league, memberCou
   // Settings Modal State
   const [showSettings, setShowSettings] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [memberProfiles, setMemberProfiles] = useState<UserProfile[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
   // Form State
   const [formState, setFormState] = useState({
@@ -59,6 +62,23 @@ const LeagueWaitingRoom: React.FC<LeagueWaitingRoomProps> = ({ league, memberCou
       draft_start_time: formatForInput(league.draft_start_time)
     });
   }, [league, showSettings]);
+
+  // Fetch Member Profiles
+  useEffect(() => {
+    const loadMembers = async () => {
+      setLoadingMembers(true);
+      try {
+        const memberIds = await api.fetchLeagueMembers(league.id);
+        const profiles = await api.fetchProfiles(memberIds);
+        setMemberProfiles(profiles);
+      } catch (e) {
+        console.error("Failed to load member profiles:", e);
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+    loadMembers();
+  }, [league.id, memberCount]);
 
   // Countdown Logic
   useEffect(() => {
@@ -123,6 +143,21 @@ const LeagueWaitingRoom: React.FC<LeagueWaitingRoomProps> = ({ league, memberCou
       console.error(e);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!window.confirm("Are you sure you want to remove this member? This will also delete their draft picks.")) return;
+
+    setRemovingMemberId(userId);
+    try {
+      await api.removeLeagueMember(league.id, userId);
+      onRefresh(); // Refresh to update count and member list
+    } catch (e) {
+      alert("Failed to remove member.");
+      console.error(e);
+    } finally {
+      setRemovingMemberId(userId === removingMemberId ? null : removingMemberId);
     }
   };
 
@@ -210,6 +245,54 @@ const LeagueWaitingRoom: React.FC<LeagueWaitingRoomProps> = ({ league, memberCou
                 style={{ width: `${(memberCount / maxMembers) * 100}%` }}
               ></div>
             </div>
+          </div>
+
+          {/* Member List */}
+          <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Users className="w-4 h-4" /> Current Managers
+            </h3>
+            {loadingMembers && memberProfiles.length === 0 ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {memberProfiles.map(profile => (
+                  <div key={profile.id} className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm border border-slate-100 group">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
+                        style={{ backgroundColor: profile.color }}
+                      >
+                        {profile.initials}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 leading-none mb-0.5">
+                          {profile.display_name} {profile.id === currentUserId && '(You)'}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium">{profile.email}</div>
+                      </div>
+                    </div>
+
+                    {isManager && profile.id !== currentUserId && (
+                      <button
+                        onClick={() => handleRemoveMember(profile.id)}
+                        disabled={!!removingMemberId}
+                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                        title="Remove Member"
+                      >
+                        {removingMemberId === profile.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                        ) : (
+                          <UserMinus className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="pt-8 border-t border-gray-100">

@@ -409,6 +409,17 @@ const App: React.FC = () => {
     }
   };
 
+  const handleRemoveMember = async (userId: string) => {
+    if (!currentLeague) return;
+    try {
+      await api.removeLeagueMember(currentLeague.id, userId);
+      // Refresh league data to reflect changes
+      await loadLeagueData(currentLeague);
+    } catch (e) {
+      alert("Failed to remove member.");
+    }
+  };
+
   const getAvailableShows = () => {
     const draftedIds = new Set(teams.flatMap(t => t.roster.map(r => r.id)));
     let available = shows.filter(s => !draftedIds.has(s.id));
@@ -593,6 +604,9 @@ const App: React.FC = () => {
             onWaiverWire={() => setView('DRAFT')}
             leagueName={currentLeague.name}
             onShowClick={setSelectedShow}
+            currentUserId={session.user.id}
+            leagueManagerId={currentLeague.created_by}
+            onRemoveMember={handleRemoveMember}
           />
         )}
 

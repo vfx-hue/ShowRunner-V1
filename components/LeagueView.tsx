@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Team, Show, STANDARD_NETWORK_MULTIPLIER } from '../types';
-import { ArrowLeft, TrendingUp, Users, RefreshCw, UserPlus, Info } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Users, RefreshCw, UserPlus, Info, UserMinus } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -39,6 +39,9 @@ interface LeagueViewProps {
   onWaiverWire: () => void;
   leagueName: string;
   onShowClick: (show: Show) => void;
+  currentUserId: string;
+  leagueManagerId: string;
+  onRemoveMember: (userId: string) => void;
 }
 
 const LeagueView: React.FC<LeagueViewProps> = ({
@@ -49,6 +52,9 @@ const LeagueView: React.FC<LeagueViewProps> = ({
   onWaiverWire,
   leagueName,
   onShowClick,
+  currentUserId,
+  leagueManagerId,
+  onRemoveMember,
 }) => {
   const [hoveredTeamId, setHoveredTeamId] = useState<string | null>(null);
   const sortedTeams = [...teams].sort((a, b) => b.totalPoints - a.totalPoints);
@@ -314,20 +320,30 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="font-black text-slate-900 text-lg uppercase tracking-tight">{team.name}</h3>
-                        {index === 0 && (
-                          <div className="flex items-center gap-1 text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-                            🏆 1st
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-slate-900 font-mono tracking-wider">
-                      {team.totalPoints.toLocaleString()}
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-slate-900 font-mono tracking-wider">
+                        {team.totalPoints.toLocaleString()}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-black uppercase tracking-widest">Views</div>
                     </div>
-                    <div className="text-[11px] text-slate-500 font-black uppercase tracking-widest">Views</div>
+                    {currentUserId === leagueManagerId && team.id !== currentUserId && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Are you sure you want to remove ${team.name}? This will delete all their picks.`)) {
+                            onRemoveMember(team.id);
+                          }
+                        }}
+                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        title="Remove Member"
+                      >
+                        <UserMinus className="w-5 h-5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
