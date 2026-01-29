@@ -146,33 +146,40 @@ const LeagueView: React.FC<LeagueViewProps> = ({
               <h1 className="text-4xl font-black text-slate-900 tracking-tight">{leagueName}</h1>
               <div className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wider">Live</div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => setShowSettings(true)}
-                className="flex items-center gap-2.5 bg-white border-2 border-slate-100 text-slate-700 hover:border-purple-200 hover:text-purple-700 px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm hover:shadow-md"
-              >
-                <Settings className="w-4 h-4" />
-                League Settings
-              </button>
-              <button
-                onClick={onWaiverWire}
-                className="flex items-center gap-2.5 bg-white border-2 border-slate-100 text-slate-700 hover:border-purple-200 hover:text-purple-700 px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm hover:shadow-md"
-              >
-                <UserPlus className="w-4 h-4" />
-                Waiver Wire
-              </button>
-              <button
-                onClick={onUpdateRatings}
-                disabled={loading}
-                className="flex items-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-xl shadow-slate-200 disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                {loading ? 'Refreshing...' : 'Sync Data'}
-              </button>
+            <div className="flex items-center gap-4 text-sm text-slate-500 font-semibold">
+              <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-slate-400" /> {teams.length} Managers</span>
+              <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+              <span className="flex items-center gap-1.5"> 2026 Season</span>
             </div>
           </div>
         </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center gap-2.5 bg-white border-2 border-slate-100 text-slate-700 hover:border-purple-200 hover:text-purple-700 px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm hover:shadow-md"
+          >
+            <Settings className="w-4 h-4" />
+            League Settings
+          </button>
+          <button
+            onClick={onWaiverWire}
+            className="flex items-center gap-2.5 bg-white border-2 border-slate-100 text-slate-700 hover:border-purple-200 hover:text-purple-700 px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm hover:shadow-md"
+          >
+            <UserPlus className="w-4 h-4" />
+            Waiver Wire
+          </button>
+          <button
+            onClick={onUpdateRatings}
+            disabled={loading}
+            className="flex items-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-xl shadow-slate-200 disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Refreshing...' : 'Sync Data'}
+          </button>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-1 gap-8">
         {/* CHART SECTION (Premium Area Chart) */}
@@ -384,22 +391,6 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                               {show.cumulativeRating ? show.cumulativeRating.toLocaleString() : '0'}
                             </div>
                           </td>
-                          <td className="px-4 py-4 text-right">
-                            {team.id === currentUserId && onDropShow && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (window.confirm(`Are you sure you want to drop ${show.title}?`)) {
-                                    onDropShow(show.id);
-                                  }
-                                }}
-                                className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                title="Drop Show"
-                              >
-                                <UserMinus className="w-4 h-4" />
-                              </button>
-                            )}
-                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -423,6 +414,18 @@ const LeagueView: React.FC<LeagueViewProps> = ({
           </div>
         </div>
       </div>
+      {showSettings && (
+        <LeagueSettingsModal
+          league={{
+            id: localStorage.getItem('active_league_id') || '',
+            name: leagueName,
+            created_by: leagueManagerId
+          } as any}
+          currentUserId={currentUserId}
+          onClose={() => setShowSettings(false)}
+          onRefresh={onUpdateRatings}
+        />
+      )}
     </div>
   );
 };
