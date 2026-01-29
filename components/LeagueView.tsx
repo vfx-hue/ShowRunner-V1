@@ -321,7 +321,6 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                           </div>
                         )}
                       </div>
-                      <p className="font-mono text-[11px] text-slate-500 font-bold uppercase tracking-wider">Manager: {team.owner.split('@')[0]}</p>
                     </div>
                   </div>
                   <div className="text-right">

@@ -22,17 +22,17 @@ const Standings: React.FC<StandingsProps> = ({ teams, hideChart = false, compact
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={sortedTeams} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                 <XAxis type="number" hide />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
-                  tick={{ fill: '#64748b', fontSize: 13, fontWeight: 500 }} 
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fill: '#64748b', fontSize: 13, fontWeight: 500 }}
                   width={120}
                 />
-                <Tooltip 
-                  cursor={{fill: 'transparent'}}
-                  contentStyle={{ 
-                    backgroundColor: '#ffffff', 
-                    borderColor: '#e2e8f0', 
+                <Tooltip
+                  cursor={{ fill: 'transparent' }}
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    borderColor: '#e2e8f0',
                     color: '#1e293b',
                     borderRadius: '8px',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
@@ -61,9 +61,8 @@ const Standings: React.FC<StandingsProps> = ({ teams, hideChart = false, compact
                   {team.totalPoints.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider mt-1 font-semibold">{team.owner}</p>
             </div>
-            
+
             {/* Removed max-h and overflow-y-auto to prevent internal scrolling */}
             <div className="flex-1 p-3 space-y-2 bg-gray-50/50">
               {team.roster.length === 0 ? (
@@ -78,10 +77,10 @@ const Standings: React.FC<StandingsProps> = ({ teams, hideChart = false, compact
                       <p className="text-[10px] text-slate-500 font-medium">{show.network}</p>
                     </div>
                     <div className="flex flex-col items-end pl-2">
-                       <span className="text-sm font-bold text-slate-700">{show.cumulativeRating.toLocaleString()}</span>
-                       {show.lastPoints > 0 && (
-                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">+{show.lastPoints.toLocaleString()}</span>
-                       )}
+                      <span className="text-sm font-bold text-slate-700">{show.cumulativeRating.toLocaleString()}</span>
+                      {show.lastPoints > 0 && (
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">+{show.lastPoints.toLocaleString()}</span>
+                      )}
                     </div>
                   </div>
                 ))
@@ -89,7 +88,7 @@ const Standings: React.FC<StandingsProps> = ({ teams, hideChart = false, compact
               {/* Draft slots placeholders */}
               {Array.from({ length: Math.max(0, 6 - team.roster.length) }).map((_, i) => (
                 <div key={i} className="border border-dashed border-gray-300 rounded-lg p-3 h-12 flex items-center justify-center bg-gray-50">
-                   <span className="text-xs text-gray-400 font-medium">Open Slot</span>
+                  <span className="text-xs text-gray-400 font-medium">Open Slot</span>
                 </div>
               ))}
             </div>

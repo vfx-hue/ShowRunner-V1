@@ -84,7 +84,6 @@ const Profile: React.FC<ProfileProps> = ({ user, onBack, onUpdate }) => {
                             {displayName.substring(0, 2).toUpperCase() || '??'}
                         </div>
                         <h2 className="text-xl font-bold text-slate-900">{displayName || 'User Name'}</h2>
-                        <p className="text-slate-400 font-medium text-sm">{email}</p>
                     </div>
 
                     <div className="p-8 space-y-8">
