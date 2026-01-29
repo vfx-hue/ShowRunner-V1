@@ -8,7 +8,7 @@ const Auth: React.FC = () => {
   const [identifier, setIdentifier] = useState(''); // Email or Username
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState<'LOGIN' | 'SIGNUP'>('LOGIN');
+  const [mode, setMode] = useState<'LOGIN' | 'SIGNUP' | 'RECOVERY' | 'UPDATE_PASSWORD'>('LOGIN');
   const [message, setMessage] = useState('');
   const [pendingInvite, setPendingInvite] = useState<string | null>(null);
 
@@ -21,6 +21,18 @@ const Auth: React.FC = () => {
       setShowModal(true); // Open modal immediately
       setMessage(`You've been invited to join a league! Create an account to accept.`);
     }
+
+    // Handle password recovery redirection
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setMode('UPDATE_PASSWORD');
+        setShowModal(true);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -30,7 +42,7 @@ const Auth: React.FC = () => {
 
     // Logic to handle "admin" or simple usernames by appending a fake domain
     let emailToUse = identifier;
-    if (!identifier.includes('@')) {
+    if (identifier && !identifier.includes('@')) {
       emailToUse = `${identifier}@showrunner.demo`;
     }
 
@@ -41,7 +53,7 @@ const Auth: React.FC = () => {
           password
         });
         if (error) throw error;
-      } else {
+      } else if (mode === 'SIGNUP') {
         const { error } = await supabase.auth.signUp({
           email: emailToUse,
           password,
@@ -53,6 +65,19 @@ const Auth: React.FC = () => {
         });
         if (error) throw error;
         setMessage('Check your email for the confirmation link!');
+      } else if (mode === 'RECOVERY') {
+        const { error } = await supabase.auth.resetPasswordForEmail(emailToUse, {
+          redirectTo: `${window.location.origin}`,
+        });
+        if (error) throw error;
+        setMessage('Password reset link sent! Check your email.');
+      } else if (mode === 'UPDATE_PASSWORD') {
+        const { error } = await supabase.auth.updateUser({
+          password: password
+        });
+        if (error) throw error;
+        setMessage('Password updated successfully! You can now sign in.');
+        setMode('LOGIN');
       }
     } catch (error: any) {
       setMessage(error.message);
@@ -153,12 +178,16 @@ const Auth: React.FC = () => {
 
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-slate-900">
-                {pendingInvite ? 'Join League' : (mode === 'LOGIN' ? 'Welcome Back' : 'Create Account')}
+                {mode === 'RECOVERY' ? 'Reset Password' :
+                  mode === 'UPDATE_PASSWORD' ? 'Update Password' :
+                    pendingInvite ? 'Join League' : (mode === 'LOGIN' ? 'Welcome Back' : 'Create Account')}
               </h2>
               <p className="text-slate-500 text-sm mt-1">
-                {pendingInvite
-                  ? 'Sign up or login to accept your invitation'
-                  : (mode === 'LOGIN' ? 'Enter your details to sign in' : 'Start your fantasy TV journey today')}
+                {mode === 'RECOVERY' ? 'Enter your email to receive a reset link' :
+                  mode === 'UPDATE_PASSWORD' ? 'Enter your new password below' :
+                    pendingInvite
+                      ? 'Sign up or login to accept your invitation'
+                      : (mode === 'LOGIN' ? 'Enter your details to sign in' : 'Start your fantasy TV journey today')}
               </p>
             </div>
 
@@ -176,32 +205,48 @@ const Auth: React.FC = () => {
                   />
                 </div>
               )}
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{mode === 'LOGIN' ? 'Email or Username' : 'Email Address'}</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="name@example.com"
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                />
-              </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
+              {mode !== 'UPDATE_PASSWORD' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{mode === 'LOGIN' || mode === 'RECOVERY' ? 'Email Address' : 'Email Address'}</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="name@example.com"
+                    className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {mode !== 'RECOVERY' && (
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-500 uppercase">{mode === 'UPDATE_PASSWORD' ? 'New Password' : 'Password'}</label>
+                    {mode === 'LOGIN' && (
+                      <button
+                        type="button"
+                        onClick={() => { setMode('RECOVERY'); setMessage(''); }}
+                        className="text-[10px] font-bold text-purple-600 hover:text-purple-700 uppercase"
+                      >
+                        Forgot?
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+              )}
 
               {message && (
-                <div className={`text-sm p-3 rounded-lg font-medium ${mode === 'SIGNUP' && !message.includes('error') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                <div className={`text-sm p-3 rounded-lg font-medium ${(mode === 'SIGNUP' || mode === 'RECOVERY' || mode === 'UPDATE_PASSWORD') && !message.includes('error') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
                   {message}
                 </div>
               )}
@@ -211,18 +256,34 @@ const Auth: React.FC = () => {
                 disabled={loading}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-purple-200 hover:shadow-xl transition-all disabled:opacity-70 disabled:cursor-not-allowed mt-2"
               >
-                {loading ? 'Processing...' : (pendingInvite ? 'Accept Invite' : (mode === 'LOGIN' ? 'Sign In' : 'Create Account'))}
+                {loading ? 'Processing...' :
+                  mode === 'RECOVERY' ? 'Send Reset Link' :
+                    mode === 'UPDATE_PASSWORD' ? 'Update Password' :
+                      (pendingInvite ? 'Accept Invite' : (mode === 'LOGIN' ? 'Sign In' : 'Create Account'))}
               </button>
             </form>
 
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => { setMode(mode === 'LOGIN' ? 'SIGNUP' : 'LOGIN'); setMessage(''); }}
-                className="text-sm text-slate-500 hover:text-purple-600 font-medium transition-colors"
-              >
-                {mode === 'LOGIN' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-              </button>
-            </div>
+            {(mode === 'LOGIN' || mode === 'SIGNUP') && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => { setMode(mode === 'LOGIN' ? 'SIGNUP' : 'LOGIN'); setMessage(''); }}
+                  className="text-sm text-slate-500 hover:text-purple-600 font-medium transition-colors"
+                >
+                  {mode === 'LOGIN' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                </button>
+              </div>
+            )}
+
+            {mode === 'RECOVERY' && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => { setMode('LOGIN'); setMessage(''); }}
+                  className="text-sm text-slate-500 hover:text-purple-600 font-medium transition-colors"
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
