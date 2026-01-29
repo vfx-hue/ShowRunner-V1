@@ -661,6 +661,7 @@ const App: React.FC = () => {
             leagueManagerId={currentLeague.created_by}
             onRemoveMember={handleRemoveMember}
             onDropShow={handleDropShow}
+            isDraftOver={isDraftOver}
           />
         )}
 

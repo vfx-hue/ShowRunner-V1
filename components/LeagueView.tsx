@@ -44,6 +44,7 @@ interface LeagueViewProps {
   leagueManagerId: string;
   onRemoveMember: (userId: string) => void;
   onDropShow?: (showId: string) => void;
+  isDraftOver?: boolean;
 }
 
 const LeagueView: React.FC<LeagueViewProps> = ({
@@ -58,6 +59,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
   leagueManagerId,
   onRemoveMember,
   onDropShow,
+  isDraftOver = false,
 }) => {
   const [hoveredTeamId, setHoveredTeamId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -167,7 +169,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
             className="flex items-center gap-2.5 bg-white border-2 border-slate-100 text-slate-700 hover:border-purple-200 hover:text-purple-700 px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm hover:shadow-md"
           >
             <UserPlus className="w-4 h-4" />
-            Waiver Wire
+            {isDraftOver ? 'Waiver Wire' : 'Enter Draft Room'}
           </button>
           <button
             onClick={onUpdateRatings}
@@ -335,7 +337,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                       </div>
                       <div className="text-[11px] text-slate-500 font-black uppercase tracking-widest">Views</div>
                     </div>
-                    {currentUserId === leagueManagerId && team.id !== currentUserId && (
+                    {currentUserId === leagueManagerId && team.id !== currentUserId && !isDraftOver && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -391,6 +393,22 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                               {show.cumulativeRating ? show.cumulativeRating.toLocaleString() : '0'}
                             </div>
                           </td>
+                          <td className="px-6 py-4 text-right">
+                            {team.id === currentUserId && onDropShow && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm(`Are you sure you want to drop ${show.title}?`)) {
+                                    onDropShow(show.id);
+                                  }
+                                }}
+                                className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                title="Drop Show"
+                              >
+                                <UserMinus className="w-4 h-4" />
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -424,6 +442,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
           currentUserId={currentUserId}
           onClose={() => setShowSettings(false)}
           onRefresh={onUpdateRatings}
+          isDraftOver={isDraftOver}
         />
       )}
     </div>

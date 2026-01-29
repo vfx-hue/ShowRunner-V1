@@ -8,13 +8,15 @@ interface LeagueSettingsModalProps {
     currentUserId: string;
     onClose: () => void;
     onRefresh: () => void;
+    isDraftOver?: boolean;
 }
 
 const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
     league,
     currentUserId,
     onClose,
-    onRefresh
+    onRefresh,
+    isDraftOver = false
 }) => {
     const [saving, setSaving] = useState(false);
     const [memberProfiles, setMemberProfiles] = useState<UserProfile[]>([]);
@@ -130,7 +132,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">League Size</label>
                             <input
                                 type="number" max={10} min={2}
-                                disabled={!isManager}
+                                disabled={!isManager || isDraftOver}
                                 value={formState.max_members}
                                 onChange={(e) => handleChange('max_members', e.target.value)}
                                 className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-sm font-bold disabled:bg-slate-50 disabled:text-slate-500"
@@ -140,7 +142,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Draft Time</label>
                             <input
                                 type="datetime-local"
-                                disabled={!isManager}
+                                disabled={!isManager || isDraftOver}
                                 value={formState.draft_start_time}
                                 onChange={(e) => handleChange('draft_start_time', e.target.value)}
                                 className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-xs font-bold disabled:bg-slate-50 disabled:text-slate-500"
@@ -211,7 +213,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                                             </div>
                                         </div>
 
-                                        {isManager && profile.id !== currentUserId && (
+                                        {isManager && profile.id !== currentUserId && !isDraftOver && (
                                             <button
                                                 onClick={() => handleRemoveMember(profile.id)}
                                                 disabled={!!removingMemberId}
