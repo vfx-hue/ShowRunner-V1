@@ -12,7 +12,7 @@ import LeagueWaitingRoom from './components/LeagueWaitingRoom';
 import ShowDetailsModal from './components/ShowDetailsModal';
 import Standings from './components/Standings';
 import Leaderboard from './components/Leaderboard';
-import AdminShowDiscovery from './components/AdminShowDiscovery';
+import GlobalTeamLeaderboard from './components/GlobalTeamLeaderboard';
 import Profile from './components/Profile';
 import { UserProfile } from './types';
 import { Loader2, ChevronDown } from 'lucide-react';
@@ -528,7 +528,7 @@ const App: React.FC = () => {
           localStorage.removeItem('active_league_id');
         }}
         onNavigateLeaderboard={() => setView('LEADERBOARD')}
-        onNavigateAdmin={() => setView('ADMIN')}
+        onNavigateAdmin={() => setView('GLOBAL_TEAMS')}
         onNavigateProfile={() => setView('PROFILE')}
         onLogout={handleLogout}
         userProfile={userProfile}
@@ -576,11 +576,12 @@ const App: React.FC = () => {
                 setView('ONBOARDING');
               }
             }}
+            onShowClick={setSelectedShow}
           />
         )}
 
-        {view === 'ADMIN' && (
-          <AdminShowDiscovery
+        {view === 'GLOBAL_TEAMS' && (
+          <GlobalTeamLeaderboard
             onBack={() => {
               if (currentLeague) {
                 setView('LEAGUE');
@@ -588,7 +589,6 @@ const App: React.FC = () => {
                 setView('ONBOARDING');
               }
             }}
-            existingShows={shows}
           />
         )}
 

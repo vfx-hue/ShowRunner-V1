@@ -49,6 +49,7 @@ export interface League {
   streaming_slots: number;
   waiver_type: 'rolling' | 'faab' | 'fcfs';
   max_adds_per_week?: number;
+  waiver_cooldown_days?: number;
 }
 
 export interface UserProfile {
@@ -60,4 +61,4 @@ export interface UserProfile {
   initials: string;
 }
 
-export type ViewState = 'AUTH' | 'ONBOARDING' | 'DASHBOARD' | 'LEAGUE' | 'DRAFT' | 'WAITING_ROOM' | 'LEADERBOARD' | 'ADMIN' | 'PROFILE';
+export type ViewState = 'AUTH' | 'ONBOARDING' | 'DASHBOARD' | 'LEAGUE' | 'DRAFT' | 'WAITING_ROOM' | 'LEADERBOARD' | 'GLOBAL_TEAMS' | 'PROFILE';

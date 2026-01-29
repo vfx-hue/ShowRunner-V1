@@ -132,6 +132,34 @@ export const getGlobalShowRankings = async () => {
   return data;
 };
 
+export const getGlobalTeamRankings = async () => {
+  // We want to join adjusted_league_scores with profiles and leagues
+  // Since we can't do complex joins easily in supabase-js without a view,
+  // we'll assume adjusted_league_scores has the fields or fetch supplementary data.
+  // Actually, let's fetch from the view and join manually or use a more comprehensive view.
+  const { data, error } = await supabase
+    .from('adjusted_league_scores')
+    .select(`
+      *,
+      leagues (
+        name
+      ),
+      profiles (
+        display_name,
+        color,
+        initials
+      )
+    `)
+    .order('adjusted_total_points', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error("Error fetching global team rankings:", error);
+    return [];
+  }
+  return data;
+};
+
 export const makePick = async (leagueId: string, userId: string, show: Show, isWaiver: boolean = false) => {
   const { error } = await supabase
     .from('picks')
@@ -172,6 +200,21 @@ export const getWeeklyAddCount = async (leagueId: string, userId: string) => {
   return count || 0;
 };
 
+export const getLatestWaiverAdd = async (leagueId: string, userId: string) => {
+  const { data, error } = await supabase
+    .from('picks')
+    .select('created_at')
+    .eq('league_id', leagueId)
+    .eq('user_id', userId)
+    .eq('is_waiver_add', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.created_at || null;
+};
+
 export const createLeague = async (userId: string, name: string, draftStartTime: string) => {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -186,7 +229,8 @@ export const createLeague = async (userId: string, name: string, draftStartTime:
       cable_slots: 3, // Default
       streaming_slots: 3, // Default
       waiver_type: 'rolling', // Default
-      max_adds_per_week: 3 // Default
+      max_adds_per_week: 3, // Default
+      waiver_cooldown_days: 7 // Default
     })
     .select()
     .single();

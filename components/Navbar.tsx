@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, ChevronDown, Tv, LogOut, User, Trophy } from 'lucide-react';
+import { Bell, ChevronDown, Tv, LogOut, User, Trophy, Users } from 'lucide-react';
 
 import { UserProfile } from '../types';
 
@@ -45,7 +45,9 @@ const Navbar: React.FC<NavbarProps> = ({
           <button onClick={onNavigateLeaderboard} className="hover:text-purple-600 transition-colors flex items-center gap-1">
             <Trophy className="w-4 h-4" /> Leaderboard
           </button>
-          <button onClick={onNavigateAdmin} className="hover:text-purple-600 transition-colors">Discover</button>
+          <button onClick={onNavigateAdmin} className="hover:text-purple-600 transition-colors flex items-center gap-1">
+            <Users className="w-4 h-4" /> Top Teams
+          </button>
           <button className="hover:text-purple-600 transition-colors">News Feed</button>
           <button className="hover:text-purple-600 transition-colors">How to Play</button>
         </nav>
