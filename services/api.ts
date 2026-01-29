@@ -109,62 +109,151 @@ export const fetchLeagueMembers = async (leagueId: string) => {
 }
 
 export const getLeagueLeaderboard = async (leagueId: string) => {
-  const { data, error } = await supabase
-    .from('adjusted_league_scores')
-    .select('*')
-    .eq('league_id', leagueId)
-    .order('adjusted_total_points', { ascending: false });
+  // 1. Fetch all picks for this league
+  const { data: picks, error: picksError } = await supabase
+    .from('picks')
+    .select('user_id, show_id, show_name')
+    .eq('league_id', leagueId);
 
-  if (error) {
-    console.error("Error fetching league leaderboard view:", error);
+  if (picksError) {
+    console.error("Error fetching picks for leaderboard:", picksError);
     return [];
   }
-  return data;
+
+  // 2. Fetch all shows to calculate their values
+  // (We could optimize this by only fetching picked shows, but for now fetch all to reuse logic)
+  const shows = await getGlobalShowRankings(); // Re-use the calculation logic
+
+  // 3. Group by User and Calculate Total
+  const userScores: Record<string, number> = {};
+
+  picks.forEach((pick: any) => {
+    let showPoints = 0;
+    const show = shows.find((s: any) => s.id === pick.show_id || s.show_name === pick.show_name);
+    if (show) {
+      showPoints = show.cumulative_viewership;
+    }
+
+    if (!userScores[pick.user_id]) userScores[pick.user_id] = 0;
+    userScores[pick.user_id] += showPoints;
+  });
+
+  // 4. Format as array
+  const leaderboard = Object.keys(userScores).map(userId => ({
+    user_id: userId,
+    league_id: leagueId,
+    adjusted_total_points: userScores[userId]
+  }));
+
+  // 5. Sort Descending
+  return leaderboard.sort((a, b) => b.adjusted_total_points - a.adjusted_total_points);
 };
 
 export const getGlobalShowRankings = async () => {
-  const { data, error } = await supabase
-    .from('show_power_rankings')
-    .select('*')
-    .order('cumulative_viewership', { ascending: false });
+  const { data: shows, error } = await supabase
+    .from('shows')
+    .select(`
+      *,
+      viewership_data (
+        viewers
+      )
+    `);
 
   if (error) throw error;
-  return data;
+
+  // Calculate cumulative viewership and sort
+  const rankedShows = shows.map((s: any) => {
+    // FIX: Category Detection (Case Insensitive)
+    let category: 'cable' | 'streaming' = 'cable';
+    if (s.type) {
+      const lowerType = s.type.toLowerCase().trim();
+      category = lowerType === 'streaming' ? 'streaming' : 'cable';
+    } else {
+      const streamingNetworks = ['Netflix', 'Hulu', 'Apple TV+', 'Prime Video', 'Disney+', 'Peacock', 'Max'];
+      const network = s["Network/Streamer"] || '';
+      category = streamingNetworks.includes(network) ? 'streaming' : 'cable';
+    }
+
+    // Calculate sum of viewers
+    const multiplier = category === 'streaming' ? 1 : 1.5; // Use standard multiplier
+    const totalViewers = (s.viewership_data || []).reduce((acc: number, curr: any) => acc + (curr.viewers || 0) * multiplier, 0);
+
+    return {
+      id: s.id,
+      show_name: s.show_name,
+      network: s["Network/Streamer"],
+      category: category,
+      next_episode_date: s["Next Episode Date"],
+      poster_url: s.poster_url,
+      imdb_rating: s.imdb_rating,
+      hype: s.hype,
+      cumulative_viewership: totalViewers
+    };
+  });
+
+  // Sort descending by viewership
+  return rankedShows.sort((a, b) => b.cumulative_viewership - a.cumulative_viewership);
 };
 
 export const getGlobalTeamRankings = async () => {
-  // Fetch top 50 scores
-  const { data: scores, error: scoresError } = await supabase
-    .from('adjusted_league_scores')
-    .select('*')
-    .order('adjusted_total_points', { ascending: false })
-    .limit(50);
+  // 1. Fetch All Picks
+  const { data: allPicks, error: picksError } = await supabase
+    .from('picks')
+    .select('user_id, league_id, show_id, show_name');
 
-  if (scoresError) {
-    console.error("Error fetching global team rankings:", scoresError);
+  if (picksError) {
+    console.error("Error fetching global picks:", picksError);
     return [];
   }
 
-  if (!scores || scores.length === 0) return [];
+  // 2. Fetch Show Values
+  const shows = await getGlobalShowRankings();
 
-  // Collect IDs
-  const userIds = [...new Set(scores.map((s: any) => s.user_id))];
-  const leagueIds = [...new Set(scores.map((s: any) => s.league_id))];
+  // 3. Aggregate Scores by User+League
+  // Key: "leagueId_userId" -> Value: points
+  const scoresMap: Record<string, { user_id: string, league_id: string, adjusted_total_points: number }> = {};
 
-  // Fetch Profiles
+  allPicks.forEach((pick: any) => {
+    const key = `${pick.league_id}_${pick.user_id}`;
+
+    // Find show points
+    const show = shows.find((s: any) => s.id === pick.show_id || s.show_name === pick.show_name);
+    const points = show ? show.cumulative_viewership : 0;
+
+    if (!scoresMap[key]) {
+      scoresMap[key] = {
+        user_id: pick.user_id,
+        league_id: pick.league_id,
+        adjusted_total_points: 0
+      };
+    }
+    scoresMap[key].adjusted_total_points += points;
+  });
+
+  const scores = Object.values(scoresMap);
+
+  // Sort and Top 50
+  scores.sort((a, b) => b.adjusted_total_points - a.adjusted_total_points);
+  const topScores = scores.slice(0, 50);
+
+  if (topScores.length === 0) return [];
+
+  // 4. Fetch Metadata (Profiles & Leagues)
+  const userIds = [...new Set(topScores.map(s => s.user_id))];
+  const leagueIds = [...new Set(topScores.map(s => s.league_id))];
+
   const { data: profiles } = await supabase
     .from('profiles')
     .select('id, display_name, color, initials')
     .in('id', userIds);
 
-  // Fetch Leagues
   const { data: leagues } = await supabase
     .from('leagues')
     .select('id, name')
     .in('id', leagueIds);
 
-  // Merge Data
-  return scores.map((score: any) => {
+  // 5. Merge
+  return topScores.map((score) => {
     const profile = profiles?.find(p => p.id === score.user_id);
     const league = leagues?.find(l => l.id === score.league_id);
     return {
