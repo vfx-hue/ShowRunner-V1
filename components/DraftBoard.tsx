@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Show, Team } from '../types';
-import { Star, Tv, Clock, Lock } from 'lucide-react';
+import { Star, Tv, Clock, Lock, Rocket } from 'lucide-react';
 
 interface DraftBoardProps {
   availableShows: Show[];
@@ -96,8 +96,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
                 {/* Rating Badge */}
                 {(show.cumulativeRating > 0 ? show.hype : show.imdbRating) && (
-                  <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm text-yellow-400 px-1.5 py-0.5 rounded text-xs font-bold">
-                    <Star className="w-3 h-3 fill-current" /> {show.cumulativeRating > 0 ? show.hype : show.imdbRating}
+                  <div className={`absolute top-2 right-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-xs font-bold ${show.cumulativeRating > 0 ? 'text-purple-400' : 'text-yellow-400'}`}>
+                    {show.cumulativeRating > 0 ? <Rocket className="w-3 h-3 fill-current" /> : <Star className="w-3 h-3 fill-current" />}
+                    {show.cumulativeRating > 0 ? show.hype : show.imdbRating}
                   </div>
                 )}
 
@@ -106,10 +107,14 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                   <h3 className="text-white font-bold text-sm leading-tight drop-shadow-md truncate">{show.title}</h3>
                   <div className="flex justify-between items-end mt-1">
                     <span className="text-xs text-slate-300 font-medium bg-white/10 px-1.5 rounded backdrop-blur-md">{show.network}</span>
-                    <span className="text-xs font-mono text-emerald-400 font-bold">
+                    <span className="text-xs font-mono text-emerald-400 font-bold flex items-center gap-1">
                       {show.cumulativeRating > 0
                         ? `${(show.cumulativeRating / 1000000).toFixed(1)}M`
-                        : `Hype: ${show.hype || '0'}`}
+                        : (
+                          <>
+                            <Rocket className="w-3 h-3" /> {show.hype || '0'}
+                          </>
+                        )}
                     </span>
                   </div>
                 </div>
