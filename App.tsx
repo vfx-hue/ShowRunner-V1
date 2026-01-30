@@ -734,6 +734,7 @@ const AppContent: React.FC = () => {
           <Route path="/" element={
             <LeagueOnboarding
               userId={session.user.id}
+              userName={userProfile?.display_name}
               existingLeagues={userLeagues}
               onLeagueSelected={async (league) => {
                 await loadLeagueData(league);

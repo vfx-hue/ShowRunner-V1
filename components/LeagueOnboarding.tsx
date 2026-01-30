@@ -4,12 +4,13 @@ import * as api from '../services/api';
 
 interface LeagueOnboardingProps {
   userId: string;
+  userName?: string;
   onLeagueSelected: (league: any) => void;
   existingLeagues: any[];
   isJoining: boolean;
 }
 
-const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSelected, existingLeagues, isJoining }) => {
+const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, userName, onLeagueSelected, existingLeagues, isJoining }) => {
   const [leagueName, setLeagueName] = useState('');
   const [draftTime, setDraftTime] = useState('');
   const [joinCode, setJoinCode] = useState('');
@@ -69,8 +70,6 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
     if (!league.draft_start_time) return false;
     const now = new Date();
     const draftTime = new Date(league.draft_start_time);
-    // Rough heuristic: if it's been 12 hours since draft start, or if there's no code shown (meaning it might be established)
-    // Actually, we'll just check if current time is after draft time.
     return now > draftTime;
   };
 
@@ -86,14 +85,13 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-black uppercase tracking-widest mb-4">
-              <CheckCircle className="w-3 h-3" /> Welcome Back
+              <CheckCircle className="w-3 h-3" /> Status Update
             </div>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-2">
-              Values Are <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">Up 12%</span>
+              Welcome Back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">{userName || 'Player'}</span>
             </h2>
             <p className="opacity-60 font-medium text-lg max-w-lg leading-relaxed">
               You are currently ranked <span className="text-white font-bold">#{heroLeague.userRank}</span> in <span className="text-white font-bold">{heroLeague.name}</span>.
-              The draft board is heating up.
             </p>
           </div>
 
