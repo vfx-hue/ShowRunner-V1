@@ -80,29 +80,38 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     <div className="bg-slate-800 rounded-xl p-6 shadow-xl border border-slate-700">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-6">
         <div className="flex flex-col gap-1">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            Draft Pool
-            <span className="text-xs font-medium bg-slate-700 text-slate-400 px-2 py-1 rounded-full border border-slate-600">
-              {filteredAndSortedShows.length} Available
-            </span>
-          </h2>
-          {isDrafting && viewMode === 'waiver' && (
-            <p className="text-sm text-slate-400 mt-1">Free Agency / Waiver Wire</p>
+          {viewMode !== 'waiver' && (
+            <>
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                Draft Pool
+                <span className="text-xs font-medium bg-slate-700 text-slate-400 px-2 py-1 rounded-full border border-slate-600">
+                  {filteredAndSortedShows.length} Available
+                </span>
+              </h2>
+              {rosterStats && (
+                <div className="flex items-center gap-3 mt-1">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    <Users className="w-3 h-3" /> My Roster:
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className={`px-2 py-0.5 rounded text-[10px] font-bold border ${rosterStats.cable.current >= rosterStats.cable.limit ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>
+                      CABLE: {rosterStats.cable.current}/{rosterStats.cable.limit}
+                    </div>
+                    <div className={`px-2 py-0.5 rounded text-[10px] font-bold border ${rosterStats.streaming.current >= rosterStats.streaming.limit ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>
+                      STREAM: {rosterStats.streaming.current}/{rosterStats.streaming.limit}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
-          {rosterStats && (
-            <div className="flex items-center gap-3 mt-1">
-              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                <Users className="w-3 h-3" /> My Roster:
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`px-2 py-0.5 rounded text-[10px] font-bold border ${rosterStats.cable.current >= rosterStats.cable.limit ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>
-                  CABLE: {rosterStats.cable.current}/{rosterStats.cable.limit}
-                </div>
-                <div className={`px-2 py-0.5 rounded text-[10px] font-bold border ${rosterStats.streaming.current >= rosterStats.streaming.limit ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>
-                  STREAM: {rosterStats.streaming.current}/{rosterStats.streaming.limit}
-                </div>
-              </div>
-            </div>
+          {viewMode === 'waiver' && (
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              Available Shows
+              <span className="text-xs font-medium bg-slate-700 text-slate-400 px-2 py-1 rounded-full border border-slate-600">
+                {filteredAndSortedShows.length}
+              </span>
+            </h2>
           )}
         </div>
 
@@ -134,7 +143,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             </select>
           </div>
 
-          {isDrafting && (
+          {isDrafting && viewMode !== 'waiver' && (
             <div className={`
               px-4 py-2 rounded-xl shadow-lg transition-all duration-300 flex items-center gap-3
               ${isMyTurn
@@ -154,8 +163,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           )}
 
           {addsRemaining !== undefined && (
-            <div className="bg-slate-900/50 border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3">
-              <TrendingUp className="w-4 h-4 text-purple-400" />
+            <div className={`bg-slate-900/50 border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3 ${viewMode === 'waiver' ? 'border-purple-500/50 bg-purple-900/20' : ''}`}>
+              <TrendingUp className={`w-4 h-4 ${viewMode === 'waiver' ? 'text-purple-300' : 'text-purple-400'}`} />
               <div>
                 <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">
                   Weekly Adds

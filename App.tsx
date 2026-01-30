@@ -722,6 +722,7 @@ const App: React.FC = () => {
             onRemoveMember={handleRemoveMember}
             onDropShow={handleDropShow}
             isDraftOver={isDraftOver}
+            showCooldown={showCooldown}
           />
         )}
 
@@ -734,8 +735,8 @@ const App: React.FC = () => {
               &larr; Back to Dashboard
             </button>
             <div className="mb-6">
-              <h2 className="text-3xl font-extrabold text-slate-900">Live Draft Room</h2>
-              <p className="text-slate-500">Pick up available shows for your roster.</p>
+              <h2 className="text-3xl font-extrabold text-slate-900">{isDraftOver ? 'Waiver Wire' : 'Live Draft Room'}</h2>
+              <p className="text-slate-500">{isDraftOver ? 'Claim available shows for next week.' : 'Pick up available shows for your roster.'}</p>
             </div>
 
             <div className="flex flex-col xl:flex-row gap-6 items-start">
@@ -755,31 +756,33 @@ const App: React.FC = () => {
                 />
               </div>
 
-              <div className="w-full xl:w-96 shrink-0 flex flex-col gap-4 xl:sticky xl:top-24">
-                {/* Control Panel */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Viewing Roster</label>
-                  <div className="relative">
-                    <select
-                      value={viewingRosterId || ''}
-                      onChange={(e) => setViewingRosterId(e.target.value)}
-                      className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-lg pl-3 pr-8 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer hover:bg-slate-100"
-                    >
-                      {teams.map(t => (
-                        <option key={t.id} value={t.id}>
-                          {t.name} {t.id === session?.user?.id ? '(You)' : ''}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              {!isDraftOver && (
+                <div className="w-full xl:w-96 shrink-0 flex flex-col gap-4 xl:sticky xl:top-24">
+                  {/* Control Panel */}
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Viewing Roster</label>
+                    <div className="relative">
+                      <select
+                        value={viewingRosterId || ''}
+                        onChange={(e) => setViewingRosterId(e.target.value)}
+                        className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-lg pl-3 pr-8 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer hover:bg-slate-100"
+                      >
+                        {teams.map(t => (
+                          <option key={t.id} value={t.id}>
+                            {t.name} {t.id === session?.user?.id ? '(You)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
                   </div>
-                </div>
 
-                {/* Roster Display */}
-                {getViewingTeam() && (
-                  <Standings teams={[getViewingTeam()!]} hideChart={true} compact={true} />
-                )}
-              </div>
+                  {/* Roster Display */}
+                  {getViewingTeam() && (
+                    <Standings teams={[getViewingTeam()!]} hideChart={true} compact={true} />
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

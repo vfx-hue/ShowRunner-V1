@@ -61,4 +61,17 @@ export interface UserProfile {
   initials: string;
 }
 
+export interface Pick {
+  id: string;
+  user_id: string;
+  show_name: string;
+  drafted_at: string;
+  league_id: string;
+  show_id: string;
+  pick_number?: number;
+  is_draft_pick: boolean;
+  created_at: string;
+  is_waiver_add: boolean;
+}
+
 export type ViewState = 'AUTH' | 'ONBOARDING' | 'DASHBOARD' | 'LEAGUE' | 'DRAFT' | 'WAITING_ROOM' | 'LEADERBOARD' | 'GLOBAL_TEAMS' | 'PROFILE';

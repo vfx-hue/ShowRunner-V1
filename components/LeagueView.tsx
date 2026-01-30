@@ -45,6 +45,7 @@ interface LeagueViewProps {
   onRemoveMember: (userId: string) => void;
   onDropShow?: (showId: string) => void;
   isDraftOver?: boolean;
+  showCooldown?: boolean;
 }
 
 const LeagueView: React.FC<LeagueViewProps> = ({
@@ -60,6 +61,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
   onRemoveMember,
   onDropShow,
   isDraftOver = false,
+  showCooldown = false,
 }) => {
   const [hoveredTeamId, setHoveredTeamId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -327,6 +329,17 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
+                        <h3 className="text-lg font-black text-slate-900">{team.name}</h3>
+                        {team.id === currentUserId && (
+                          <div className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            YOU
+                          </div>
+                        )}
+                        {showCooldown && team.id === currentUserId && (
+                          <div className="flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded text-[10px] font-bold text-orange-500 uppercase tracking-wider border border-orange-100">
+                            Cooldown Active
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
