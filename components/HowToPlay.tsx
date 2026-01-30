@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trophy, Tv, Users, Star, ArrowRight } from 'lucide-react';
+import { Trophy, Tv, Users, Star, ArrowRight, Flame } from 'lucide-react';
 
 interface HowToPlayProps {
     onBack: () => void;
@@ -45,11 +45,11 @@ const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
 
                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
                     <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-6">
-                        <Star className="w-6 h-6 text-emerald-600" />
+                        <Flame className="w-6 h-6 text-emerald-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">3. Score Points</h3>
+                    <h3 className="text-xl font-bold text-slate-900 mb-3">3. Momentum Scoring</h3>
                     <p className="text-slate-600 leading-relaxed">
-                        Points are based on real-world viewership. <strong>Cable/Broadcast shows earn a 1.5x multiplier</strong> on their ratings, while Streaming shows earn standard points (1x).
+                        Points are 1:1 with real-world viewership. But momentum matters—if your show's viewership grows, you get a <strong>Heat Bonus</strong> multiplier! Plus, <strong>Cable/Broadcast shows earn a 1.5x multiplier</strong> on every point.
                     </p>
                 </div>
 
@@ -57,9 +57,9 @@ const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
                     <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-6">
                         <Trophy className="w-6 h-6 text-amber-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">4. Win the Season</h3>
+                    <h3 className="text-xl font-bold text-slate-900 mb-3">4. Monthly Redrafts</h3>
                     <p className="text-slate-600 leading-relaxed">
-                        Manage your roster throughout the season via the <strong>Waiver Wire</strong>. Drop underperforming shows and pick up breakout hits to climb the leaderboard.
+                        The competition resets every month! Draft fresh rosters, manage them via the <strong>Waiver Wire</strong>, and build a legacy across historical periods to see who owns the season.
                     </p>
                 </div>
             </div>
