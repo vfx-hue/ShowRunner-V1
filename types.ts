@@ -33,6 +33,15 @@ export interface Team {
   totalPoints: number;
 }
 
+export interface LeaguePeriod {
+  id: string;
+  league_id: string;
+  month_year: string; // e.g., '2026-01'
+  status: 'drafting' | 'active' | 'finished';
+  draft_start_time?: string;
+  created_at: string;
+}
+
 export const STANDARD_NETWORK_MULTIPLIER = 1.5;
 
 export interface League {
@@ -50,6 +59,9 @@ export interface League {
   waiver_type: 'rolling' | 'faab' | 'fcfs';
   max_adds_per_week?: number;
   waiver_cooldown_days?: number;
+
+  // New Period Reference
+  current_period_id?: string;
 }
 
 export interface UserProfile {
@@ -72,6 +84,7 @@ export interface Pick {
   is_draft_pick: boolean;
   created_at: string;
   is_waiver_add: boolean;
+  period_id?: string; // Links pick to a specific month
 }
 
 export type ViewState = 'AUTH' | 'ONBOARDING' | 'DASHBOARD' | 'LEAGUE' | 'DRAFT' | 'WAITING_ROOM' | 'LEADERBOARD' | 'GLOBAL_TEAMS' | 'PROFILE' | 'HOW_TO_PLAY';

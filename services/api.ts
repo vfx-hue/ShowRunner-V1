@@ -1,4 +1,4 @@
-import { Show, League } from '../types';
+import { Show, League, LeaguePeriod } from '../types';
 import { supabase } from '../lib/supabase';
 
 // --- Data Fetching from Supabase ---
@@ -86,12 +86,17 @@ export const fetchShowsFromSheet = async (): Promise<Show[]> => {
 
 // --- League & Picks ---
 
-export const fetchLeaguePicks = async (leagueId: string) => {
-  const { data, error } = await supabase
+export const fetchLeaguePicks = async (leagueId: string, periodId?: string) => {
+  let query = supabase
     .from('picks')
     .select('*')
     .eq('league_id', leagueId);
 
+  if (periodId) {
+    query = query.eq('period_id', periodId);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 };
@@ -108,12 +113,20 @@ export const fetchLeagueMembers = async (leagueId: string) => {
   return data.map(m => m.user_id);
 }
 
-export const getLeagueLeaderboard = async (leagueId: string) => {
-  // 1. Fetch all picks for this league
+export const getLeagueLeaderboard = async (leagueId: string, periodId?: string) => {
+  // 1. Fetch current period if not provided
+  let activePeriodId = periodId;
+  if (!activePeriodId) {
+    const period = await getCurrentPeriod(leagueId);
+    activePeriodId = period?.id;
+  }
+
+  // 2. Fetch all picks for this period
   const { data: picks, error: picksError } = await supabase
     .from('picks')
     .select('user_id, show_id, show_name')
-    .eq('league_id', leagueId);
+    .eq('league_id', leagueId)
+    .eq('period_id', activePeriodId);
 
   if (picksError) {
     console.error("Error fetching picks for leaderboard:", picksError);
@@ -122,10 +135,8 @@ export const getLeagueLeaderboard = async (leagueId: string) => {
 
   if (!picks || picks.length === 0) return [];
 
-  // 2. Fetch only relevant shows to calculate their values
-  // Extract unique Show IDs to fetch
+  // 3. Fetch relevant shows and THEIR ENTIRE HISTORY for momentum/growth
   const showIds = [...new Set(picks.map((p: any) => p.show_id))];
-
   const { data: shows, error: showsError } = await supabase
     .from('shows')
     .select(`
@@ -133,7 +144,7 @@ export const getLeagueLeaderboard = async (leagueId: string) => {
       show_name,
       "Network/Streamer", 
       type, 
-      viewership_data (viewers)
+      viewership_data (viewers, rating_date)
     `)
     .in('id', showIds);
 
@@ -142,14 +153,30 @@ export const getLeagueLeaderboard = async (leagueId: string) => {
     return [];
   }
 
-  // 3. Group by User and Calculate Total
+  // 4. Calculate Heat-Based Scores
   const userScores: Record<string, number> = {};
 
-  // Helper to calculate score for a show
-  const getShowScore = (show: any) => {
-    if (!show) return 0;
+  const calculateMomentumScore = (show: any) => {
+    if (!show || !show.viewership_data || show.viewership_data.length === 0) return 0;
 
-    // Logic duplicated from getGlobalShowRankings for consistency
+    // Sort history by date descending
+    const history = [...show.viewership_data].sort((a, b) =>
+      new Date(b.rating_date).getTime() - new Date(a.rating_date).getTime()
+    );
+
+    const latest = history[0];
+    const previous = history[1]; // Penultimate entry for delta
+
+    // Base Score: 1 viewer = 1 point
+    let totalScore = latest.viewers || 0;
+
+    // Heat Bonus (Growth %): Score = Current * (1 + GrowthRate)
+    if (previous && previous.viewers > 0 && latest.viewers > previous.viewers) {
+      const growthRate = (latest.viewers - previous.viewers) / previous.viewers;
+      totalScore = Math.floor(totalScore * (1 + growthRate));
+    }
+
+    // Apply Network Multiplier
     let category: 'cable' | 'streaming' = 'cable';
     if (show.type) {
       const lowerType = show.type.toLowerCase().trim();
@@ -159,27 +186,26 @@ export const getLeagueLeaderboard = async (leagueId: string) => {
       const network = show["Network/Streamer"] || '';
       category = streamingNetworks.includes(network) ? 'streaming' : 'cable';
     }
-
     const multiplier = category === 'streaming' ? 1 : 1.5;
-    return (show.viewership_data || []).reduce((acc: number, curr: any) => acc + (curr.viewers || 0) * multiplier, 0);
+
+    return totalScore * multiplier;
   };
 
   picks.forEach((pick: any) => {
     const show = shows.find((s: any) => s.id === pick.show_id);
-    const showPoints = getShowScore(show);
+    const showPoints = calculateMomentumScore(show);
 
     if (!userScores[pick.user_id]) userScores[pick.user_id] = 0;
     userScores[pick.user_id] += showPoints;
   });
 
-  // 4. Format as array
+  // 5. Format and Sort
   const leaderboard = Object.keys(userScores).map(userId => ({
     user_id: userId,
     league_id: leagueId,
     adjusted_total_points: userScores[userId]
   }));
 
-  // 5. Sort Descending
   return leaderboard.sort((a, b) => b.adjusted_total_points - a.adjusted_total_points);
 };
 
@@ -283,22 +309,31 @@ export const getGlobalTeamRankings = async () => {
 
   const { data: leagues } = await supabase
     .from('leagues')
-    .select('id, name')
+    .select('id, name, cable_slots, streaming_slots')
     .in('id', leagueIds);
 
-  // 5. Merge
+  // 5. Merge and calculate averages
   return topScores.map((score) => {
     const profile = profiles?.find(p => p.id === score.user_id);
     const league = leagues?.find(l => l.id === score.league_id);
+
+    // Calculate normalized average (Total Points / (Cable + Streaming Slots))
+    // Fallback to 6 slots if league settings aren't found
+    const totalSlots = (league?.cable_slots || 3) + (league?.streaming_slots || 3);
+    const averagePerShow = score.adjusted_total_points / totalSlots;
+
     return {
       ...score,
+      average_per_show: averagePerShow,
       profiles: profile || { display_name: 'Unknown', color: '#cbd5e1', initials: '??' },
       leagues: league || { name: 'Unknown League' }
     };
-  });
+  }).sort((a, b) => b.average_per_show - a.average_per_show); // Sort by average now
 };
 
 export const makePick = async (leagueId: string, userId: string, show: Show, isWaiver: boolean = false) => {
+  const period = await getCurrentPeriod(leagueId);
+
   const { error } = await supabase
     .from('picks')
     .insert({
@@ -306,7 +341,8 @@ export const makePick = async (leagueId: string, userId: string, show: Show, isW
       user_id: userId,
       show_id: show.id,
       show_name: show.title,
-      is_waiver_add: isWaiver
+      is_waiver_add: isWaiver,
+      period_id: period?.id
     });
 
   if (error) throw error;
@@ -375,16 +411,85 @@ export const createLeague = async (userId: string, name: string, draftStartTime:
 
   if (leagueError) throw leagueError;
 
+  // IMPORTANT: Create the first period for this league
+  const monthYear = new Date().toISOString().slice(0, 7); // YYYY-MM
+  await createLeaguePeriod(league.id, monthYear, 'drafting', draftStartTime);
+
   const { error: memberError } = await supabase
     .from('league_members')
     .insert({ league_id: league.id, user_id: userId });
 
-  if (memberError) throw memberError;
+  if (memberError) {
+    if (!memberError.message.includes('duplicate key')) throw memberError;
+  }
 
   return {
     ...league,
     code: league.invite_code || code
   };
+};
+
+// --- League Period Management ---
+
+export const createLeaguePeriod = async (leagueId: string, monthYear: string, status: 'drafting' | 'active' | 'finished' = 'drafting', draftStartTime?: string) => {
+  const { data, error } = await supabase
+    .from('league_periods')
+    .insert({
+      league_id: leagueId,
+      month_year: monthYear,
+      status,
+      draft_start_time: draftStartTime
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Update league's current_period_id
+  await supabase
+    .from('leagues')
+    .update({ current_period_id: data.id })
+    .eq('id', leagueId);
+
+  return data;
+};
+
+export const fetchLeaguePeriods = async (leagueId: string): Promise<LeaguePeriod[]> => {
+  const { data, error } = await supabase
+    .from('league_periods')
+    .select('*')
+    .eq('league_id', leagueId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+};
+
+export const getCurrentPeriod = async (leagueId: string): Promise<LeaguePeriod | null> => {
+  // Try to find the latest active/drafting period
+  const { data, error } = await supabase
+    .from('league_periods')
+    .select('*')
+    .eq('league_id', leagueId)
+    .in('status', ['active', 'drafting'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching current period:", error);
+    return null;
+  }
+  return data;
+};
+
+export const updatePeriodStatus = async (periodId: string, status: 'drafting' | 'active' | 'finished') => {
+  const { error } = await supabase
+    .from('league_periods')
+    .update({ status })
+    .eq('id', periodId);
+
+  if (error) throw error;
 };
 
 export const updateLeague = async (leagueId: string, updates: Partial<League>) => {
@@ -488,10 +593,28 @@ export const fetchUserLeagues = async (userId: string) => {
 
   if (error) throw error;
 
-  return data.map((d: any) => ({
+  const leagues = data.map((d: any) => ({
     ...d.leagues,
     code: d.leagues.invite_code || d.leagues.code // Map invite_code to frontend 'code' property
   }));
+
+  // Enrichment: Get basic stats for each league to show on onboarding cards
+  const enriched = await Promise.all(leagues.map(async (l: any) => {
+    try {
+      const leaderboard = await getLeagueLeaderboard(l.id);
+      const userStats = leaderboard.find((s: any) => s.user_id === userId);
+      return {
+        ...l,
+        userPoints: userStats ? userStats.adjusted_total_points : 0,
+        userRank: leaderboard.findIndex((s: any) => s.user_id === userId) + 1,
+        totalTeams: leaderboard.length
+      };
+    } catch (e) {
+      return l;
+    }
+  }));
+
+  return enriched;
 };
 
 export const addShow = async (show: Partial<Show>) => {

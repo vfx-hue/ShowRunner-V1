@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Team, Show, STANDARD_NETWORK_MULTIPLIER } from '../types';
-import { ArrowLeft, Users, RefreshCw, UserPlus, Info, UserMinus, Settings, Clock } from 'lucide-react';
+import { ArrowLeft, Users, RefreshCw, UserPlus, Info, UserMinus, Settings, Clock, Tv, PlayCircle, Smartphone, Flame, Calendar, ChevronDown } from 'lucide-react';
 import LeagueSettingsModal from './LeagueSettingsModal';
 import {
   AreaChart,
@@ -46,6 +46,9 @@ interface LeagueViewProps {
   onDropShow?: (showId: string) => void;
   isDraftOver?: boolean;
   cooldownExpiresAt?: number | null;
+  periods: any[];
+  selectedPeriodId: string | null;
+  onPeriodChange: (periodId: string) => void;
 }
 
 const LeagueView: React.FC<LeagueViewProps> = ({
@@ -62,9 +65,14 @@ const LeagueView: React.FC<LeagueViewProps> = ({
   onDropShow,
   isDraftOver = false,
   cooldownExpiresAt = null,
+  periods,
+  selectedPeriodId,
+  onPeriodChange,
 }) => {
   const [hoveredTeamId, setHoveredTeamId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('all');
+
   const sortedTeams = [...teams].sort((a, b) => b.totalPoints - a.totalPoints);
 
   // Cooldown Timer Logic
@@ -116,7 +124,16 @@ const LeagueView: React.FC<LeagueViewProps> = ({
       });
     });
 
-    const sortedDates = Array.from(allDates).sort((a, b) => a - b);
+    let sortedDates = Array.from(allDates).sort((a, b) => a - b);
+
+    // Filter by time range
+    if (timeRange !== 'all' && sortedDates.length > 0) {
+      const now = Math.max(...sortedDates); // Use latest data as anchor
+      const days = timeRange === '7d' ? 7 : 30;
+      const cutoff = now - (days * 24 * 60 * 60 * 1000);
+      sortedDates = sortedDates.filter(ts => ts >= cutoff);
+    }
+
 
     // 2. Pre-calculate viewport-friendly labels and data points
     // We want to calculate the cumulative total for each team at each specific date
@@ -189,6 +206,23 @@ const LeagueView: React.FC<LeagueViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* Period Selector */}
+          <div className="relative group">
+            <select
+              value={selectedPeriodId || ''}
+              onChange={(e) => onPeriodChange(e.target.value)}
+              className="appearance-none bg-white border-2 border-slate-100 text-slate-700 hover:border-purple-200 hover:text-purple-700 pl-11 pr-10 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm hover:shadow-md cursor-pointer outline-none"
+            >
+              {periods.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.month_year} {p.status === 'active' ? '(Current)' : ''}
+                </option>
+              ))}
+            </select>
+            <Calendar className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-purple-500 transition-colors" />
+            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-purple-500 transition-colors" />
+          </div>
+
           <button
             onClick={() => setShowSettings(true)}
             className="flex items-center gap-2.5 bg-white border-2 border-slate-100 text-slate-700 hover:border-purple-200 hover:text-purple-700 px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm hover:shadow-md"
@@ -224,19 +258,33 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                 <h2 className="text-2xl font-black text-slate-900 mb-2">Viewership Momentum</h2>
                 <p className="text-slate-500 text-sm font-medium">Cumulative total views across all shows in roster</p>
               </div>
-              <div className="flex flex-wrap gap-4 bg-slate-50/80 p-3 rounded-2xl border border-slate-100">
-                {teamLines.map(t => (
-                  <button
-                    key={t.id}
-                    onMouseEnter={() => setHoveredTeamId(t.id)}
-                    onMouseLeave={() => setHoveredTeamId(null)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all ${hoveredTeamId === t.id ? 'bg-white shadow-sm scale-105' : 'opacity-60 hover:opacity-100'}`}
-                  >
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.color, boxShadow: `0 0 10px ${t.color}44` }}></span>
-                    <span className="text-xs font-bold text-slate-700">{t.name}</span>
-                  </button>
-                ))}
+              <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                  {(['7d', '30d', 'all'] as const).map(range => (
+                    <button
+                      key={range}
+                      onClick={() => setTimeRange(range)}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${timeRange === range ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      {range === 'all' ? 'Season' : range}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-3 bg-slate-50/80 p-3 rounded-2xl border border-slate-100">
+                  {teamLines.map(t => (
+                    <button
+                      key={t.id}
+                      onMouseEnter={() => setHoveredTeamId(t.id)}
+                      onMouseLeave={() => setHoveredTeamId(null)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all ${hoveredTeamId === t.id ? 'bg-white shadow-sm scale-110' : 'opacity-60 hover:opacity-100'}`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color, boxShadow: `0 0 10px ${t.color}44` }}></span>
+                      <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">{t.name}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
+
             </div>
 
             <div className="h-[400px] w-full">
@@ -419,23 +467,47 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                           <td className="px-6 py-5">
                             <div className="font-black text-slate-800 group-hover/row:text-purple-700 transition-colors truncate max-w-[160px] text-base mb-0.5">{show.title}</div>
                             <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 uppercase tracking-wide">
-                              <span className={`w-2 h-2 rounded-full ${show.category === 'streaming' ? 'bg-purple-500' : 'bg-blue-500'}`}></span>
+                              {show.category === 'streaming' ? (
+                                <Smartphone className="w-3.5 h-3.5 text-purple-500" />
+                              ) : (
+                                <Tv className="w-3.5 h-3.5 text-blue-500" />
+                              )}
                               {show.network}
                             </div>
                           </td>
                           <td className="px-6 py-4 text-right">
                             {show.lastPoints > 0 ? (
-                              <div className="inline-flex items-center gap-1 text-[12px] font-bold text-emerald-700 bg-emerald-100/50 px-2.5 py-1.5 rounded-xl border border-emerald-200">
+                              <div className="inline-flex items-center gap-1 text-[12px] font-bold text-emerald-700 bg-emerald-100/50 px-2.5 py-1.5 rounded-xl border border-emerald-200 relative">
                                 +{show.lastPoints.toLocaleString()}
+                                {loading && (
+                                  <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-emerald-500 font-black animate-float-up pointer-events-none">
+                                    +{show.lastPoints.toLocaleString()}
+                                  </span>
+                                )}
                               </div>
                             ) : (
                               <span className="text-slate-300 font-mono">-</span>
                             )}
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="font-mono font-semibold text-[15px] text-slate-900 group-hover/row:text-purple-900 transition-transform tracking-wider">
-                              {show.cumulativeRating ? show.cumulativeRating.toLocaleString() : '0'}
-                            </div>
+                            {(() => {
+                              const history = show.viewershipHistory || [];
+                              const latest = history[history.length - 1];
+                              const previous = history[history.length - 2];
+                              const isHeating = previous && latest && latest.viewers > previous.viewers;
+
+                              return (
+                                <div className="font-mono font-semibold text-[15px] text-slate-900 group-hover/row:text-purple-900 transition-transform tracking-wider flex items-center justify-end gap-2">
+                                  {isHeating && (
+                                    <div className="flex items-center gap-1 bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded-lg text-[10px] font-black border border-orange-100 animate-pulse">
+                                      <Flame className="w-3 h-3 fill-orange-500" />
+                                      HEAT
+                                    </div>
+                                  )}
+                                  {show.cumulativeRating ? show.cumulativeRating.toLocaleString() : '0'}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="px-6 py-4 text-right">
                             {team.id === currentUserId && onDropShow && (

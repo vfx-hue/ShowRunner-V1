@@ -47,6 +47,8 @@ const App: React.FC = () => {
 
   // Draft Logic State
   const [orderedMemberIds, setOrderedMemberIds] = useState<string[]>([]);
+  const [periods, setPeriods] = useState<any[]>([]);
+  const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
 
   // Roster View State (Sidebar)
   const [viewingRosterId, setViewingRosterId] = useState<string>("");
@@ -109,10 +111,29 @@ const App: React.FC = () => {
     return now < expiresAt ? expiresAt : null;
   }, [lastWaiverAddDate, currentLeague?.waiver_cooldown_days]);
 
+  const picksUntilTurn = useMemo(() => {
+    if (isDraftOver || orderedMemberIds.length === 0 || !session?.user?.id) return 0;
+
+    const nextPickIndex = recentPicks.length + 1;
+    const myId = session.user.id;
+    let lookAhead = 0;
+    const maxSlots = (currentLeague?.cable_slots || 3) + (currentLeague?.streaming_slots || 3);
+    const totalPossiblePicks = orderedMemberIds.length * maxSlots;
+
+    while (lookAhead < totalPossiblePicks - recentPicks.length) {
+      const drafterId = getManagerAtPick(nextPickIndex + lookAhead, orderedMemberIds.length, orderedMemberIds);
+      if (drafterId === myId) return lookAhead;
+      lookAhead++;
+    }
+
+    return lookAhead;
+  }, [recentPicks.length, orderedMemberIds, session?.user?.id, currentLeague, isDraftOver]);
+
   const isMyTurn = useMemo(() => {
     if (isDraftOver) return true; // Anyone can move in free agency
     return session?.user?.id === currentDrafterInfo.id;
   }, [isDraftOver, session?.user?.id, currentDrafterInfo.id]);
+
 
 
   // 1. Check for invite code in URL on app mount
@@ -290,25 +311,33 @@ const App: React.FC = () => {
     }
   };
 
-  const loadLeagueData = async (league: League, currentShows: Show[] = shows) => {
+  const loadLeagueData = async (league: League, currentShows: Show[] = shows, periodId?: string) => {
     setLoadingData(true);
     setCurrentLeague(league);
     localStorage.setItem('active_league_id', league.id);
 
     try {
-      // 1. Check Members Count & Order
-      // API now returns sorted IDs
+      // 1. Fetch Periods
+      const leaguePeriods = await api.fetchLeaguePeriods(league.id);
+      setPeriods(leaguePeriods);
+
+      const activePeriod = periodId
+        ? leaguePeriods.find(p => p.id === periodId)
+        : (leaguePeriods.find(p => p.status !== 'finished') || leaguePeriods[0]);
+
+      const currentPeriodId = activePeriod?.id || null;
+      setSelectedPeriodId(currentPeriodId);
+
+      // 2. Check Members Count & Order
       const memberIds = await api.fetchLeagueMembers(league.id);
       setLeagueMemberCount(memberIds.length);
       setOrderedMemberIds(memberIds);
 
-      // 2. Get Picks
-      const picks = await api.fetchLeaguePicks(league.id);
-
-      // 3. (REMOVED) Get Targeted Stats - No longer needed as all viewership is pre-fetched
+      // 3. Get Picks for this period
+      const picks = await api.fetchLeaguePicks(league.id, currentPeriodId || undefined);
 
       // 4. Get Adjusted Scores from DB View
-      const leagueScores = await api.getLeagueLeaderboard(league.id);
+      const leagueScores = await api.getLeagueLeaderboard(league.id, currentPeriodId || undefined);
 
       const isLeagueFull = memberIds.length >= (league.max_members || 4);
       const hasDraftActivity = picks.length > 0;
@@ -407,8 +436,14 @@ const App: React.FC = () => {
         setLastWaiverAddDate(latestAdd);
       }
 
-      // Always default to Dashboard (League View)
-      setView('LEAGUE');
+      // 6. Navigation Logic:
+      // If we are in DRAFT or WAITING_ROOM, we might want to stay there.
+      // If we've just loaded from ONBOARDING, we go to LEAGUE.
+      setView(currentView => {
+        if (currentView === 'DRAFT' || currentView === 'WAITING_ROOM') return currentView;
+        return 'LEAGUE';
+      });
+
 
     } catch (e: any) {
       console.error(e);
@@ -719,12 +754,15 @@ const App: React.FC = () => {
         {view === 'LEAGUE' && currentLeague && (
           <LeagueView
             teams={teams}
+            periods={periods}
+            selectedPeriodId={selectedPeriodId}
+            onPeriodChange={(pid) => loadLeagueData(currentLeague!, shows, pid)}
             onBack={() => {
               setView('ONBOARDING');
               setCurrentLeague(null);
               localStorage.removeItem('active_league_id');
             }}
-            onUpdateRatings={() => loadLeagueData(currentLeague)}
+            onUpdateRatings={() => loadLeagueData(currentLeague!, shows, selectedPeriodId || undefined)}
             loading={loadingData}
             onWaiverWire={() => setView('DRAFT')}
             leagueName={currentLeague.name}
@@ -762,7 +800,10 @@ const App: React.FC = () => {
                   onShowClick={setSelectedShow}
                   isMyTurn={isMyTurn}
                   currentDrafterName={currentDrafterInfo.name}
+                  picksUntilTurn={picksUntilTurn}
+                  lastPick={recentPicks[0]}
                   addsRemaining={isDraftOver ? (currentLeague.max_adds_per_week || 3) - weeklyMovesCount : undefined}
+
                   maxAdds={currentLeague.max_adds_per_week}
                   viewMode={isDraftOver ? 'waiver' : 'draft'}
                   cooldownExpiresAt={cooldownExpiresAt}

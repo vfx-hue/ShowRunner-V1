@@ -30,7 +30,7 @@ const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         {/* Left: Logo */}
         <div
-          className="flex items-center gap-2 cursor-pointer group"
+          className="flex items-center gap-2 cursor-pointer group hover-lift"
           onClick={onNavigateHome}
         >
           <div className="bg-purple-600 p-1.5 rounded-lg shadow-sm shadow-purple-200 group-hover:bg-purple-700 transition-colors">
@@ -43,14 +43,14 @@ const Navbar: React.FC<NavbarProps> = ({
 
         {/* Center: Navigation Links */}
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-600">
-          <button onClick={onNavigateHome} className="hover:text-purple-600 transition-colors">Leagues</button>
-          <button onClick={onNavigateLeaderboard} className="hover:text-purple-600 transition-colors flex items-center gap-1">
+          <button onClick={onNavigateHome} className="hover:text-purple-600 transition-colors hover-lift">Leagues</button>
+          <button onClick={onNavigateLeaderboard} className="hover:text-purple-600 transition-colors flex items-center gap-1 hover-lift">
             <Trophy className="w-4 h-4" /> Leaderboard
           </button>
-          <button onClick={onNavigateAdmin} className="hover:text-purple-600 transition-colors flex items-center gap-1">
+          <button onClick={onNavigateAdmin} className="hover:text-purple-600 transition-colors flex items-center gap-1 hover-lift">
             <Users className="w-4 h-4" /> Top Teams
           </button>
-          <button onClick={onNavigateHowToPlay} className="hover:text-purple-600 transition-colors flex items-center gap-1">
+          <button onClick={onNavigateHowToPlay} className="hover:text-purple-600 transition-colors flex items-center gap-1 hover-lift">
             <HelpCircle className="w-4 h-4" /> How to Play
           </button>
         </nav>

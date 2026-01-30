@@ -20,7 +20,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teams, onSelectLeague, recentPick
       <h2 className="text-4xl font-extrabold text-slate-900 text-center mb-8 tracking-tight">Dashboard</h2>
 
       {/* League List Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow hover-lift">
         <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <div
             className="cursor-pointer hover:opacity-70 transition-opacity"

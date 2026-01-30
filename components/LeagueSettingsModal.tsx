@@ -229,31 +229,6 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1"><Shield className="w-3 h-3" /> Waiver Type</label>
-                        <select
-                            disabled={!isManager}
-                            value={formState.waiver_type}
-                            onChange={(e) => handleChange('waiver_type', e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm bg-white disabled:bg-slate-50 disabled:text-slate-500"
-                        >
-                            <option value="rolling">Rolling Priority</option>
-                            <option value="faab">FAAB</option>
-                            <option value="fcfs">First Come First Served</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1">Waiver Cooldown (Days)</label>
-                        <input
-                            type="number"
-                            disabled={!isManager}
-                            value={formState.waiver_cooldown_days}
-                            onChange={(e) => handleChange('waiver_cooldown_days', e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm disabled:bg-slate-50 disabled:text-slate-500"
-                        />
-                    </div>
-
                     {/* Member List Section */}
                     <div className="pt-4 border-t border-gray-100">
                         <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2"><Users className="w-4 h-4" /> League Members</h3>

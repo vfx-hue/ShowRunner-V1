@@ -15,6 +15,8 @@ interface DraftBoardProps {
   maxAdds?: number;
   viewMode?: 'draft' | 'waiver';
   cooldownExpiresAt?: number | null;
+  picksUntilTurn?: number;
+  lastPick?: any;
 }
 
 const DraftBoard: React.FC<DraftBoardProps> = ({
@@ -29,7 +31,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   addsRemaining,
   maxAdds,
   viewMode = 'draft',
-  cooldownExpiresAt = null
+  cooldownExpiresAt = null,
+  picksUntilTurn = 0,
+  lastPick = null
 }) => {
   const [sortBy, setSortBy] = useState<'hype' | 'viewers'>('hype');
   const [filterNetwork, setFilterNetwork] = useState<string>('All');
@@ -184,7 +188,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               <Clock className={`w-4 h-4 ${isMyTurn ? 'text-white' : 'text-slate-400'}`} />
               <div>
                 <span className={`block text-[8px] font-bold uppercase tracking-wider ${isMyTurn ? 'text-green-100' : 'text-slate-400'}`}>
-                  On The Clock
+                  {isMyTurn ? "You're Up" : "On The Clock"}
                 </span>
                 <span className={`block font-black text-sm ${isMyTurn ? 'text-white' : 'text-slate-200'}`}>
                   {isMyTurn ? "YOUR TURN" : (currentDrafterName || 'Waiting...')}
@@ -192,6 +196,27 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               </div>
             </div>
           )}
+
+          {!isMyTurn && viewMode === 'draft' && picksUntilTurn > 0 && (
+            <div className="bg-slate-700 border border-slate-600 px-4 py-2 rounded-xl flex items-center gap-3">
+              <Users className="w-4 h-4 text-blue-400" />
+              <div>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">Picks Until Your Turn</span>
+                <span className="block font-black text-sm text-white">{picksUntilTurn}</span>
+              </div>
+            </div>
+          )}
+
+          {lastPick && viewMode === 'draft' && (
+            <div className="bg-slate-900/30 border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3">
+              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400/20" />
+              <div>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-500">Last Pick</span>
+                <span className="block font-bold text-xs text-white truncate max-w-[100px]">{lastPick.show_name}</span>
+              </div>
+            </div>
+          )}
+
 
           {viewMode === 'draft' && addsRemaining !== undefined && (
             <div className={`bg-slate-900/50 border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3`}>
@@ -368,6 +393,24 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               </div>
             );
           })}
+        </div>
+      )}
+      {/* Draft Complete Overlay */}
+      {!isDrafting && viewMode === 'draft' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in pointer-events-none">
+          <div className="bg-white rounded-[3rem] p-12 text-center shadow-2xl animate-bounce-in max-w-lg pointer-events-auto border-8 border-purple-100">
+            <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Rocket className="w-12 h-12 text-purple-600" />
+            </div>
+            <h2 className="text-5xl font-black text-slate-900 mb-4 tracking-tighter italic">DRAFT COMPLETE!</h2>
+            <p className="text-xl text-slate-500 font-medium mb-8">Your roster is locked in. Let the season begin!</p>
+            <button
+              onClick={() => window.location.href = '/'} // Redirect to dashboard
+              className="bg-slate-900 text-white font-black px-10 py-5 rounded-2xl text-lg hover:bg-slate-800 transition-all hover:scale-105 active:scale-95 shadow-xl"
+            >
+              GO TO DASHBOARD
+            </button>
+          </div>
         </div>
       )}
     </div>

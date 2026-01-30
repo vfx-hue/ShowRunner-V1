@@ -93,11 +93,11 @@ const GlobalTeamLeaderboard: React.FC<GlobalTeamLeaderboardProps> = ({ onBack })
                                 {/* Stats */}
                                 <div className="flex items-center gap-8 md:gap-12 px-6 md:border-l border-slate-100">
                                     <div className="text-center md:text-right">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Lifetime Views</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Average Per Show</p>
                                         <div className="flex items-center justify-center md:justify-end gap-2">
                                             <TrendingUp className="w-4 h-4 text-emerald-500" />
                                             <span className="text-2xl font-black text-slate-900 font-mono tracking-tighter">
-                                                {(entry.adjusted_total_points || 0).toLocaleString()}
+                                                {Math.floor(entry.average_per_show || 0).toLocaleString()}
                                             </span>
                                         </div>
                                     </div>

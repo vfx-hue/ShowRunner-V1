@@ -15,6 +15,7 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
   const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [selectingLeagueId, setSelectingLeagueId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -23,10 +24,10 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
       setError("Please select a draft start time.");
       return;
     }
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       const isoDate = new Date(draftTime).toISOString();
       const league = await api.createLeague(userId, leagueName, isoDate);
@@ -42,7 +43,7 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
     setLoading(true);
     setError('');
     setSuccess('');
-    
+
     try {
       const league = await api.joinLeague(userId, joinCode);
       setSuccess("Success! Loading league data...");
@@ -55,36 +56,82 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
     }
   };
 
+  const handleSelectLeague = async (league: any) => {
+    setSelectingLeagueId(league.id);
+    try {
+      await onLeagueSelected(league);
+    } finally {
+      setSelectingLeagueId(null);
+    }
+  };
+
+  const isDraftOver = (league: any) => {
+    if (!league.draft_start_time) return false;
+    const now = new Date();
+    const draftTime = new Date(league.draft_start_time);
+    // Rough heuristic: if it's been 12 hours since draft start, or if there's no code shown (meaning it might be established)
+    // Actually, we'll just check if current time is after draft time.
+    return now > draftTime;
+  };
+
   return (
-    <div className="max-w-4xl mx-auto mt-12 px-4">
-      <h2 className="text-3xl font-bold text-slate-900 mb-8 text-center">Your Leagues</h2>
+    <div className="max-w-4xl mx-auto mt-12 px-4 pb-20">
+      <h2 className="text-4xl font-black text-slate-900 mb-2 text-center tracking-tight">Your Leagues</h2>
+      <p className="text-slate-500 text-center mb-10 font-medium">Select a league to manage your roster or join the draft.</p>
 
       {existingLeagues.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
-          {existingLeagues.map(l => (
-            <button 
-              key={l.id}
-              onClick={() => onLeagueSelected(l)}
-              disabled={isJoining}
-              className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:border-purple-300 hover:shadow-md cursor-pointer transition-all text-left relative overflow-hidden group disabled:opacity-70 disabled:cursor-wait"
-            >
-              <h3 className="text-xl font-bold text-slate-900 group-hover:text-purple-700 transition-colors">{l.name}</h3>
-              <div className="flex justify-between items-end mt-2">
-                <p className="text-sm text-slate-500">Code: {l.code}</p>
-                {l.draft_start_time && (
-                  <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-full">
-                    {new Date(l.draft_start_time).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-              
-              {isJoining && (
-                <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+          {existingLeagues.map(l => {
+            const draftOver = isDraftOver(l);
+            return (
+              <button
+                key={l.id}
+                onClick={() => handleSelectLeague(l)}
+                disabled={!!selectingLeagueId || isJoining}
+                className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:border-purple-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer transition-all text-left relative overflow-hidden group disabled:opacity-70 disabled:cursor-wait"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-xl font-black text-slate-900 group-hover:text-purple-700 transition-colors uppercase tracking-tight">{l.name}</h3>
+                  {draftOver && (
+                    <div className="flex flex-col items-end">
+                      <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-widest mb-1">Active</span>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-slate-900">{l.userPoints?.toLocaleString() || 0} pts</div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Rank #{l.userRank || '?'} of {l.totalTeams || '?'}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </button>
-          ))}
+
+                <div className="flex justify-between items-end mt-4">
+                  <div>
+                    {!draftOver ? (
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Code: <span className="text-slate-900 font-mono">{l.code}</span></p>
+                    ) : (
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Season In Progress</p>
+                    )}
+                  </div>
+                  {l.draft_start_time && (
+                    <div className="flex items-center gap-1.5 bg-slate-50 text-slate-500 px-3 py-1 rounded-xl border border-slate-100">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span className="text-xs font-bold">
+                        {new Date(l.draft_start_time).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {selectingLeagueId === l.id && (
+                  <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center transition-all animate-fade-in">
+                    <div className="bg-white p-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100">
+                      <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
+                      <span className="text-xs font-black text-slate-900 uppercase tracking-widest">Loading...</span>
+                    </div>
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -107,7 +154,7 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Draft Start Time</label>
               <div className="relative">
@@ -122,8 +169,8 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading || isJoining}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg transition-colors disabled:opacity-50 mt-2"
             >
@@ -151,8 +198,8 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
                 maxLength={6}
               />
             </div>
-             <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading || isJoining}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg transition-colors disabled:opacity-50 mt-[34px]"
             >
@@ -161,13 +208,13 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
           </form>
         </div>
       </div>
-      
+
       {error && (
         <div className="mt-6 p-4 bg-red-50 text-red-600 rounded-lg text-center font-medium animate-fade-in">
           {error}
         </div>
       )}
-      
+
       {success && (
         <div className="mt-6 p-4 bg-green-50 text-green-700 rounded-lg text-center font-bold flex items-center justify-center gap-2 animate-fade-in">
           <CheckCircle className="w-5 h-5" />
