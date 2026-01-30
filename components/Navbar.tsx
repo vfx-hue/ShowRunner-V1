@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, ChevronDown, Tv, LogOut, User, Trophy, Users, HelpCircle } from 'lucide-react';
+import { ChevronDown, Tv, LogOut, User, Trophy, Users, HelpCircle } from 'lucide-react';
 
 import { UserProfile } from '../types';
-import NotificationsDropdown from './NotificationsDropdown';
 
 interface NavbarProps {
   onNavigateHome: () => void;
@@ -25,21 +24,6 @@ const Navbar: React.FC<NavbarProps> = ({
 }) => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const notificationRef = useRef<HTMLDivElement>(null);
-
-  // Close notifications when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setIsNotificationsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   return (
     <header className="bg-white border-b border-gray-200 pt-4 pb-2 px-6 sticky top-0 z-50">
@@ -73,21 +57,6 @@ const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right: Actions & Profile */}
         <div className="flex items-center gap-4">
-          <div className="relative" ref={notificationRef}>
-            <button
-              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className={`text-slate-500 hover:text-purple-600 transition-colors relative ${isNotificationsOpen ? 'text-purple-600' : ''}`}
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </button>
-
-            <NotificationsDropdown
-              isOpen={isNotificationsOpen}
-              onClose={() => setIsNotificationsOpen(false)}
-            />
-          </div>
-
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}

@@ -49,7 +49,7 @@ const HowToPlay: React.FC<HowToPlayProps> = ({ onBack }) => {
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-3">3. Score Points</h3>
                     <p className="text-slate-600 leading-relaxed">
-                        Your shows earn points based on real-world viewership data. Nielsen ratings for cable and official viewership metrics for streaming determine your weekly score.
+                        Points are based on real-world viewership. <strong>Cable/Broadcast shows earn a 1.5x multiplier</strong> on their ratings, while Streaming shows earn standard points (1x).
                     </p>
                 </div>
 
