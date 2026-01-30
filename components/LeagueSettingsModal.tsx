@@ -24,12 +24,12 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
     const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
     const [formState, setFormState] = useState({
-        max_members: league.max_members || 4,
-        cable_slots: league.cable_slots || 3,
-        streaming_slots: league.streaming_slots || 3,
+        max_members: league.max_members ?? 4,
+        cable_slots: league.cable_slots ?? 3,
+        streaming_slots: league.streaming_slots ?? 3,
         waiver_type: league.waiver_type || 'rolling',
         draft_start_time: '',
-        waiver_cooldown_days: league.waiver_cooldown_days || 7
+        waiver_cooldown_days: league.waiver_cooldown_days ?? 7
     });
 
     const isManager = league.created_by === currentUserId;
@@ -44,12 +44,12 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
 
     useEffect(() => {
         setFormState({
-            max_members: league.max_members || 4,
-            cable_slots: league.cable_slots || 3,
-            streaming_slots: league.streaming_slots || 3,
+            max_members: league.max_members ?? 4,
+            cable_slots: league.cable_slots ?? 3,
+            streaming_slots: league.streaming_slots ?? 3,
             waiver_type: league.waiver_type || 'rolling',
             draft_start_time: formatForInput(league.draft_start_time),
-            waiver_cooldown_days: league.waiver_cooldown_days || 7
+            waiver_cooldown_days: league.waiver_cooldown_days ?? 7
         });
     }, [league]);
 
