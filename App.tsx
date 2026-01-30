@@ -406,17 +406,8 @@ const App: React.FC = () => {
         setLastWaiverAddDate(latestAdd);
       }
 
-      // Decide View
-      const maxSlots = (league.cable_slots || 3) + (league.streaming_slots || 3);
-      const totalPossiblePicks = memberIds.length * maxSlots;
-
-      if (picks.length >= totalPossiblePicks) {
-        setView('LEAGUE');
-      } else {
-        if (view !== 'LEAGUE' && view !== 'LEADERBOARD') {
-          setView(picks.length > 0 ? 'DRAFT' : 'DRAFT');
-        }
-      }
+      // Always default to Dashboard (League View)
+      setView('LEAGUE');
 
     } catch (e: any) {
       console.error(e);
@@ -755,6 +746,7 @@ const App: React.FC = () => {
                   addsRemaining={isDraftOver ? (currentLeague.max_adds_per_week || 3) - weeklyMovesCount : undefined}
                   maxAdds={currentLeague.max_adds_per_week}
                   viewMode={isDraftOver ? 'waiver' : 'draft'}
+                  cooldownExpiresAt={cooldownExpiresAt}
                 />
               </div>
 

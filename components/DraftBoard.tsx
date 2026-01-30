@@ -14,6 +14,7 @@ interface DraftBoardProps {
   addsRemaining?: number;
   maxAdds?: number;
   viewMode?: 'draft' | 'waiver';
+  cooldownExpiresAt?: number | null;
 }
 
 const DraftBoard: React.FC<DraftBoardProps> = ({
@@ -27,10 +28,39 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   currentDrafterName,
   addsRemaining,
   maxAdds,
-  viewMode = 'draft'
+  viewMode = 'draft',
+  cooldownExpiresAt = null
 }) => {
   const [sortBy, setSortBy] = useState<'hype' | 'viewers'>('hype');
   const [filterNetwork, setFilterNetwork] = useState<string>('All');
+  const [timeLeft, setTimeLeft] = useState<string>('');
+
+  React.useEffect(() => {
+    if (!cooldownExpiresAt) {
+      if (timeLeft) setTimeLeft('');
+      return;
+    }
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const diff = cooldownExpiresAt - now;
+      if (diff <= 0) {
+        setTimeLeft('');
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      if (days > 0) setTimeLeft(`${days}d ${hours}h`);
+      else setTimeLeft(`${hours}h ${minutes}m`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000);
+    return () => clearInterval(interval);
+  }, [cooldownExpiresAt]);
 
   const networks = useMemo(() => {
     const netSet = new Set<string>();
@@ -118,6 +148,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
           {/* Filter */}
           <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-1.5 min-w-[140px]">
+            {/* kept filter select */}
             <Filter className="w-3.5 h-3.5 text-slate-500" />
             <select
               value={filterNetwork}
@@ -162,15 +193,29 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             </div>
           )}
 
-          {addsRemaining !== undefined && (
-            <div className={`bg-slate-900/50 border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3 ${viewMode === 'waiver' ? 'border-purple-500/50 bg-purple-900/20' : ''}`}>
-              <TrendingUp className={`w-4 h-4 ${viewMode === 'waiver' ? 'text-purple-300' : 'text-purple-400'}`} />
+          {viewMode === 'draft' && addsRemaining !== undefined && (
+            <div className={`bg-slate-900/50 border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3`}>
+              <TrendingUp className={`w-4 h-4 text-purple-400`} />
               <div>
                 <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">
                   Weekly Adds
                 </span>
                 <span className="block font-black text-sm text-white">
                   {addsRemaining} / {maxAdds || 3} Left
+                </span>
+              </div>
+            </div>
+          )}
+
+          {viewMode === 'waiver' && timeLeft && (
+            <div className="bg-slate-900/50 border border-purple-500/50 bg-purple-900/20 px-4 py-2 rounded-xl flex items-center gap-3">
+              <Clock className="w-4 h-4 text-purple-300" />
+              <div>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-purple-200">
+                  Waiver Cooldown
+                </span>
+                <span className="block font-black text-sm text-white">
+                  {timeLeft}
                 </span>
               </div>
             </div>
