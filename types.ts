@@ -56,7 +56,7 @@ export interface League {
   // Settings
   cable_slots: number;
   streaming_slots: number;
-  waiver_type: 'rolling' | 'faab' | 'fcfs';
+  waiver_type: 'rolling' | 'faab' | 'fcfs' | 'rolling_priority';
   max_adds_per_week?: number;
   waiver_cooldown_days?: number;
 

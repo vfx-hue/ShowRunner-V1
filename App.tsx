@@ -344,7 +344,7 @@ const App: React.FC = () => {
       const stats = await api.getLeagueCareerStats(league.id);
       setCareerStats(stats);
 
-      const isLeagueFull = memberIds.length >= (league.max_members ?? 2);
+      const isLeagueFull = memberIds.length >= (league.max_members ?? 4);
       const hasDraftActivity = picks.length > 0;
 
       const now = new Date();

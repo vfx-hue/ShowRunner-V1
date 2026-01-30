@@ -341,7 +341,7 @@ export const getGlobalTeamRankings = async () => {
 
   const { data: leagues } = await supabase
     .from('leagues')
-    .select('id, name, cable_slots, streaming_slots')
+    .select('id, name, max_members, cable_slots, streaming_slots')
     .in('id', leagueIds);
 
   // 5. Merge and calculate averages
@@ -431,13 +431,13 @@ export const createLeague = async (userId: string, name: string, draftStartTime:
       invite_code: code,
       created_by: userId,
       draft_start_time: draftStartTime,
-      max_members: 10,
-      cable_slots: 3, // Default
-      streaming_slots: 3, // Default
-      waiver_type: 'rolling', // Default
-      max_adds_per_week: 3, // Default
-      waiver_cooldown_days: 7, // Default
-      redraft_every_period: true // Default
+      max_members: 4,
+      cable_slots: 3,
+      streaming_slots: 3,
+      waiver_type: 'rolling_priority',
+      max_adds_per_week: 3,
+      waiver_cooldown_days: 7,
+      redraft_every_period: true
     })
     .select()
     .single();
