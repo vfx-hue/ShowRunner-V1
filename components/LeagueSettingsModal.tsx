@@ -229,21 +229,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Waiver Type</label>
-                            <select
-                                disabled={!isManager}
-                                value={formState.waiver_type}
-                                onChange={(e) => handleChange('waiver_type', e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-sm font-bold disabled:bg-slate-50 disabled:text-slate-500"
-                            >
-                                <option value="rolling">Rolling</option>
-                                <option value="rolling_priority">Rolling Priority</option>
-                                <option value="fcfs">First Come First Serve</option>
-                                <option value="faab">FAAB</option>
-                            </select>
-                        </div>
+                    <div className="grid grid-cols-1 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Waiver Cooldown (Days)</label>
                             <input

@@ -130,10 +130,20 @@ const LeagueView: React.FC<LeagueViewProps> = ({
 
     // Filter by time range
     if (timeRange !== 'all' && sortedDates.length > 0) {
-      const now = Date.now(); // Use current time for 7d/30d filter
+      const now = Date.now();
       const days = timeRange === '7d' ? 7 : 30;
       const cutoff = now - (days * 24 * 60 * 60 * 1000);
-      sortedDates = sortedDates.filter(ts => ts >= cutoff);
+
+      const filtered = sortedDates.filter(ts => ts >= cutoff);
+
+      // If filtering by current time yields no data (old data), anchor to latest data point instead
+      if (filtered.length === 0) {
+        const latest = Math.max(...sortedDates);
+        const anchorCutoff = latest - (days * 24 * 60 * 60 * 1000);
+        sortedDates = sortedDates.filter(ts => ts >= anchorCutoff);
+      } else {
+        sortedDates = filtered;
+      }
     }
 
 
@@ -442,11 +452,15 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                           </div>
                         )}
                       </div>
-                      {careerStats[team.id] && (
+                      {careerStats[team.id] ? (
                         <div className="flex items-center gap-2.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                           <span className="flex items-center gap-1"><Trophy className="w-3 h-3 text-amber-500/60" /> {Math.floor(careerStats[team.id].total_points).toLocaleString()}</span>
                           <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
                           <span>Avg Rank: #{careerStats[team.id].avg_finish.toFixed(1)}</span>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] font-bold text-slate-300 uppercase tracking-wider italic">
+                          New Executive • No Career Stats
                         </div>
                       )}
                     </div>

@@ -131,7 +131,14 @@ export const getLeagueLeaderboard = async (leagueId: string, periodId?: string) 
 
   if (!activePeriodId) return [];
 
-  const draftStartTime = activePeriod?.draft_start_time || null;
+  // 1.5 Fetch League Settings (for draft_start_time fallback if period is null)
+  const { data: leagueDetail } = await supabase
+    .from('leagues')
+    .select('draft_start_time')
+    .eq('id', leagueId)
+    .single();
+
+  const draftStartTime = activePeriod?.draft_start_time || leagueDetail?.draft_start_time || null;
 
   // 2. Fetch all picks for this period
   const { data: picks, error: picksError } = await supabase
