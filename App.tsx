@@ -98,12 +98,14 @@ const App: React.FC = () => {
     return false;
   }, [currentLeague, orderedMemberIds, recentPicks]);
 
-  const showCooldown = useMemo(() => {
-    if (!lastWaiverAddDate || !currentLeague?.waiver_cooldown_days) return false;
+  const cooldownExpiresAt = useMemo(() => {
+    if (!lastWaiverAddDate || !currentLeague?.waiver_cooldown_days) return null;
     const cooldownMs = (currentLeague.waiver_cooldown_days || 7) * 24 * 60 * 60 * 1000;
     const lastAdd = new Date(lastWaiverAddDate).getTime();
+    const expiresAt = lastAdd + cooldownMs;
     const now = new Date().getTime();
-    return now < lastAdd + cooldownMs;
+
+    return now < expiresAt ? expiresAt : null;
   }, [lastWaiverAddDate, currentLeague?.waiver_cooldown_days]);
 
   const isMyTurn = useMemo(() => {
@@ -453,7 +455,7 @@ const App: React.FC = () => {
 
       // Enforce Waiver Limits & Cooldown
       if (isWaiver && currentLeague) {
-        if (showCooldown) {
+        if (cooldownExpiresAt) {
           alert(`You are currently on waiver cooldown. Next move available in few days.`);
           return;
         }
@@ -698,7 +700,7 @@ const App: React.FC = () => {
               onSelectLeague={() => setView('LEAGUE')}
               recentPicks={recentPicks}
               currentUserId={session.user.id}
-              showCooldown={showCooldown}
+              showCooldown={!!cooldownExpiresAt} // Dashboard keeps boolean for now or update it
               league={currentLeague}
             />
           </>
@@ -722,7 +724,7 @@ const App: React.FC = () => {
             onRemoveMember={handleRemoveMember}
             onDropShow={handleDropShow}
             isDraftOver={isDraftOver}
-            showCooldown={showCooldown}
+            cooldownExpiresAt={cooldownExpiresAt}
           />
         )}
 

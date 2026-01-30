@@ -76,22 +76,44 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
 
     const handleSaveSettings = async () => {
         if (!isManager) return;
+
+        // Validation
+        const maxMembers = Number(formState.max_members);
+        const cableSlots = Number(formState.cable_slots);
+        const streamingSlots = Number(formState.streaming_slots);
+        const cooldown = Number(formState.waiver_cooldown_days);
+
+        if (maxMembers < 2 || maxMembers > 20) {
+            alert("League size must be between 2 and 20.");
+            return;
+        }
+        if (cableSlots < 0 || streamingSlots < 0) {
+            alert("Slots cannot be negative.");
+            return;
+        }
+        if (cooldown < 0) {
+            alert("Cooldown days cannot be negative.");
+            return;
+        }
+
         setSaving(true);
         try {
             const isoDate = formState.draft_start_time ? new Date(formState.draft_start_time).toISOString() : null;
             await api.updateLeague(league.id, {
-                max_members: Number(formState.max_members),
-                cable_slots: Number(formState.cable_slots),
-                streaming_slots: Number(formState.streaming_slots),
+                max_members: maxMembers,
+                cable_slots: cableSlots,
+                streaming_slots: streamingSlots,
                 waiver_type: formState.waiver_type as any,
                 draft_start_time: isoDate,
-                waiver_cooldown_days: Number(formState.waiver_cooldown_days)
+                waiver_cooldown_days: cooldown
             });
-            onRefresh();
+            // Force refresh of data
+            await onRefresh();
+            alert("Settings saved successfully!");
             onClose();
-        } catch (e) {
-            alert("Failed to update settings.");
+        } catch (e: any) {
             console.error(e);
+            alert(`Failed to update settings: ${e.message || "Unknown error"}`);
         } finally {
             setSaving(false);
         }
@@ -116,8 +138,8 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg animate-slide-up relative my-8">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto" onClick={onClose}>
+            <div className="bg-white rounded-2xl shadow-2xl p-5 w-full max-w-md animate-slide-up relative my-8" onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
                     <X className="w-5 h-5" />
                 </button>
@@ -125,11 +147,11 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                 <h2 className="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2">
                     <Settings className="w-5 h-5 text-purple-600" /> League {isManager ? 'Manager Settings' : 'Settings'}
                 </h2>
-                <p className="text-sm text-slate-500 mb-6 border-b border-gray-100 pb-4">
+                <p className="text-sm text-slate-500 mb-4 border-b border-gray-100 pb-3">
                     {isManager ? 'Configure scoring and roster rules.' : 'View league rules and members.'}
                 </p>
 
-                <div className="space-y-6">
+                <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">League Size</label>
@@ -141,16 +163,18 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                                 className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-sm font-bold disabled:bg-slate-50 disabled:text-slate-500"
                             />
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Draft Time</label>
-                            <input
-                                type="datetime-local"
-                                disabled={!isManager || isDraftOver}
-                                value={formState.draft_start_time}
-                                onChange={(e) => handleChange('draft_start_time', e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-xs font-bold disabled:bg-slate-50 disabled:text-slate-500"
-                            />
-                        </div>
+                        {!isDraftOver && (
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Draft Time</label>
+                                <input
+                                    type="datetime-local"
+                                    disabled={!isManager}
+                                    value={formState.draft_start_time}
+                                    onChange={(e) => handleChange('draft_start_time', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-xs font-bold disabled:bg-slate-50 disabled:text-slate-500"
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">

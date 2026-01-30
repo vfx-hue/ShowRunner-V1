@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Team, Show, STANDARD_NETWORK_MULTIPLIER } from '../types';
-import { ArrowLeft, Users, RefreshCw, UserPlus, Info, UserMinus, Settings } from 'lucide-react';
+import { ArrowLeft, Users, RefreshCw, UserPlus, Info, UserMinus, Settings, Clock } from 'lucide-react';
 import LeagueSettingsModal from './LeagueSettingsModal';
 import {
   AreaChart,
@@ -45,7 +45,7 @@ interface LeagueViewProps {
   onRemoveMember: (userId: string) => void;
   onDropShow?: (showId: string) => void;
   isDraftOver?: boolean;
-  showCooldown?: boolean;
+  cooldownExpiresAt?: number | null;
 }
 
 const LeagueView: React.FC<LeagueViewProps> = ({
@@ -61,11 +61,41 @@ const LeagueView: React.FC<LeagueViewProps> = ({
   onRemoveMember,
   onDropShow,
   isDraftOver = false,
-  showCooldown = false,
+  cooldownExpiresAt = null,
 }) => {
   const [hoveredTeamId, setHoveredTeamId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const sortedTeams = [...teams].sort((a, b) => b.totalPoints - a.totalPoints);
+
+  // Cooldown Timer Logic
+  const [timeLeft, setTimeLeft] = useState<string>('');
+
+  React.useEffect(() => {
+    if (!cooldownExpiresAt) {
+      if (timeLeft) setTimeLeft('');
+      return;
+    }
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const diff = cooldownExpiresAt - now;
+      if (diff <= 0) {
+        setTimeLeft('');
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      if (days > 0) setTimeLeft(`${days}d ${hours}h`);
+      else setTimeLeft(`${hours}h ${minutes}m`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, [cooldownExpiresAt]);
 
   /* ---------------------------------------------
      STABLE & OPTIMIZED TIME-SERIES CHART DATA
@@ -335,9 +365,10 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                             YOU
                           </div>
                         )}
-                        {showCooldown && team.id === currentUserId && (
-                          <div className="flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded text-[10px] font-bold text-orange-500 uppercase tracking-wider border border-orange-100">
-                            Cooldown Active
+                        {timeLeft && team.id === currentUserId && (
+                          <div className="flex items-center gap-1.5 bg-orange-50 px-2 py-0.5 rounded text-[10px] font-bold text-orange-500 uppercase tracking-wider border border-orange-100">
+                            <Clock className="w-3 h-3" />
+                            {timeLeft}
                           </div>
                         )}
                       </div>
