@@ -128,6 +128,20 @@ const LeagueView: React.FC<LeagueViewProps> = ({
 
     let sortedDates = Array.from(allDates).sort((a, b) => a - b);
 
+    const draftTimeTs = periods.find(p => p.id === selectedPeriodId)?.draft_start_time
+      ? new Date(periods.find(p => p.id === selectedPeriodId).draft_start_time).getTime()
+      : null;
+
+    // Filter by draft time - chart should only show growth after the draft
+    if (draftTimeTs) {
+      sortedDates = sortedDates.filter(ts => ts > draftTimeTs);
+
+      // Add draft day as a starting point if we have data after or if we want an empty baseline
+      if (sortedDates.length >= 0) {
+        sortedDates = [draftTimeTs, ...sortedDates];
+      }
+    }
+
     // Filter by time range
     if (timeRange !== 'all' && sortedDates.length > 0) {
       const now = Date.now();
@@ -183,7 +197,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
       chartData: finalPoints,
       teamLines: teams.map(t => ({ id: t.id, name: t.name, color: t.color }))
     };
-  }, [teams]);
+  }, [teams, timeRange, periods, selectedPeriodId]);
 
   // Custom Tick for Y-Axis
   const formatYAxis = (val: any): string => {
@@ -194,15 +208,16 @@ const LeagueView: React.FC<LeagueViewProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto mt-8 px-4 pb-24 animate-fade-in">
+    <div className="max-w-7xl mx-auto mt-8 px-4 pb-24 animate-fade-in-up">
       {/* Header Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div className="flex items-center gap-5">
           <button
             onClick={onBack}
-            className="p-3 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all hover:scale-105 active:scale-95 shadow-sm"
+            className="group flex items-center justify-center w-12 h-12 rounded-2xl bg-white border border-slate-100 hover:border-purple-200 text-slate-400 hover:text-purple-600 transition-all shadow-sm active:scale-95"
+            title="Return to Network"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           </button>
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -229,10 +244,10 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                 return <div className="bg-slate-50 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-100 uppercase tracking-wider text-center">Snapshot</div>;
               })()}
             </div>
-            <div className="flex items-center gap-4 text-sm text-slate-500 font-semibold">
-              <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-slate-400" /> {teams.length} Managers</span>
-              <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-              <span className="flex items-center gap-1.5"> 2026 Season</span>
+            <div className="flex items-center gap-4 text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
+              <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-slate-300" /> {teams.length} Managers</span>
+              <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+              <span className="flex items-center gap-1.5 italic"> 2026 Season</span>
             </div>
           </div>
         </div>
@@ -413,6 +428,13 @@ const LeagueView: React.FC<LeagueViewProps> = ({
             <div>
               <h2 className="text-2xl font-black text-slate-900 tracking-tight">League Rosters</h2>
               <p className="text-sm text-slate-500 font-medium">Click a show to view full performance details</p>
+              <button
+                onClick={onBack}
+                className="mb-8 flex items-center text-[10px] font-black text-slate-400 hover:text-purple-600 transition-all uppercase tracking-[0.2em]"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 mr-2" />
+                Return to Network
+              </button>
             </div>
             <div className="flex items-center gap-2 text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl">
               <Info className="w-3.5 h-3.5" />
@@ -426,7 +448,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                 key={team.id}
                 onMouseEnter={() => setHoveredTeamId(team.id)}
                 onMouseLeave={() => setHoveredTeamId(null)}
-                className={`bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden transition-all duration-300 flex flex-col ${hoveredTeamId === team.id ? 'shadow-2xl shadow-slate-200 -translate-y-1 border-purple-100' : 'hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1'}`}
+                className={`premium-card overflow-hidden flex flex-col ${hoveredTeamId === team.id ? 'shadow-2xl shadow-slate-200 -translate-y-1 ring-2 ring-purple-100/50' : ''}`}
               >
                 {/* Team Header */}
                 <div className="px-6 py-6 border-b border-slate-50 flex justify-between items-center bg-gradient-to-br from-white to-slate-50/30">
@@ -439,7 +461,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="text-lg font-black text-slate-900">{team.name}</h3>
+                        <h3 className="text-lg font-black text-slate-900 tracking-tight">{team.name}</h3>
                         {team.id === currentUserId && (
                           <div className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                             YOU
@@ -452,15 +474,11 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                           </div>
                         )}
                       </div>
-                      {careerStats[team.id] ? (
-                        <div className="flex items-center gap-2.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      {careerStats[team.id] && (
+                        <div className="flex items-center gap-2.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50/80 px-2 py-0.5 rounded-md border border-slate-100/50">
                           <span className="flex items-center gap-1"><Trophy className="w-3 h-3 text-amber-500/60" /> {Math.floor(careerStats[team.id].total_points).toLocaleString()}</span>
-                          <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                          <span className="w-1.5 h-1.5 bg-slate-200 rounded-full"></span>
                           <span>Avg Rank: #{careerStats[team.id].avg_finish.toFixed(1)}</span>
-                        </div>
-                      ) : (
-                        <div className="text-[10px] font-bold text-slate-300 uppercase tracking-wider italic">
-                          New Executive • No Career Stats
                         </div>
                       )}
                     </div>
@@ -494,10 +512,10 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                   <table className="w-full text-sm text-left border-separate border-spacing-0 min-w-[500px]">
                     <thead>
                       <tr className="bg-slate-50/50">
-                        <th className="px-4 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest border-b border-slate-100">Show</th>
-                        <th className="px-4 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Weekly</th>
-                        <th className="px-4 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Total</th>
-                        <th className="px-4 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Action</th>
+                        <th className="px-4 py-3 font-black text-[11px] text-slate-400 uppercase tracking-widest border-b border-slate-50">Show</th>
+                        <th className="px-4 py-3 font-black text-[11px] text-slate-400 uppercase tracking-widest text-right border-b border-slate-50">Matchup</th>
+                        <th className="px-4 py-3 font-black text-[11px] text-slate-400 uppercase tracking-widest text-right border-b border-slate-50">Lifetime</th>
+                        <th className="px-4 py-3 font-black text-[11px] text-slate-400 uppercase tracking-widest text-right border-b border-slate-50">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -540,11 +558,17 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                               const isHeating = previous && latest && latest.viewers > previous.viewers;
 
                               return (
-                                <div className="font-mono font-semibold text-[15px] text-slate-900 group-hover/row:text-purple-900 transition-transform tracking-wider flex items-center justify-end gap-2">
+                                <div className="font-mono font-bold text-[14px] text-slate-300 opacity-40 group-hover/row:opacity-100 transition-all tracking-wider flex items-center justify-end gap-2">
                                   {isHeating && (
-                                    <div className="flex items-center gap-1 bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded-lg text-[10px] font-black border border-orange-100 animate-pulse">
-                                      <Flame className="w-3 h-3 fill-orange-500" />
-                                      HEAT
+                                    <div className="group/heat relative">
+                                      <div className="flex items-center gap-1 bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-lg text-[9px] font-black border border-amber-100 animate-pulse tracking-widest">
+                                        <Flame className="w-3 h-3 fill-amber-500" />
+                                        HEAT
+                                      </div>
+                                      <div className="absolute bottom-full right-0 mb-2 w-48 bg-slate-900 text-white text-[10px] font-bold p-2.5 rounded-xl opacity-0 group-hover/heat:opacity-100 transition-all pointer-events-none z-50 shadow-2xl border border-slate-800 leading-relaxed tracking-normal text-left">
+                                        <div className="text-amber-400 mb-1 flex items-center gap-1"><Flame className="w-3 h-3" /> SCORING BOOST</div>
+                                        This show has positive momentum! Viewership is multiplied by <span className="text-white font-mono">(1 + Growth%)</span> this week.
+                                      </div>
                                     </div>
                                   )}
                                   {show.cumulativeRating ? show.cumulativeRating.toLocaleString() : '0'}

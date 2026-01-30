@@ -72,10 +72,10 @@ const Standings: React.FC<StandingsProps> = ({ teams, hideChart = false, compact
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{team.roster.length} Active Shows</p>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-2xl font-black text-slate-900 tracking-tighter">
+                  <span className="text-2xl font-black text-slate-900 tracking-tight">
                     {team.totalPoints.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                   </span>
-                  <span className="text-[9px] font-black text-purple-500 uppercase tracking-widest">Points</span>
+                  <span className="text-[9px] font-black text-purple-500 uppercase tracking-[0.2em]">Points</span>
                 </div>
               </div>
               <div
@@ -97,7 +97,7 @@ const Standings: React.FC<StandingsProps> = ({ teams, hideChart = false, compact
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{show.network}</p>
                     </div>
                     <div className="flex flex-col items-end pl-2">
-                      <span className="text-sm font-black text-slate-700">{show.cumulativeRating.toLocaleString()}</span>
+                      <span className="text-sm font-black text-slate-700 tracking-tight">{show.cumulativeRating.toLocaleString()}</span>
                       {show.lastPoints > 0 && (
                         <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-100 flex items-center gap-0.5">
                           <Flame className="w-2 h-2" /> {show.lastPoints.toLocaleString()}

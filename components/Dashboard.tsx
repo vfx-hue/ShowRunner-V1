@@ -26,12 +26,12 @@ const Dashboard: React.FC<DashboardProps> = ({ teams, onSelectLeague, recentPick
 
           <div className="flex flex-wrap gap-4">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex-1 min-w-[140px]">
-              <p className="text-[10px] uppercase font-bold tracking-widest text-purple-300 mb-1">My Rank</p>
-              <p className="text-2xl font-black">#{sortedTeams.findIndex(t => t.id === currentUserId) + 1}</p>
+              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-purple-300 mb-1">My Rank</p>
+              <p className="text-2xl font-black tracking-tight">#{sortedTeams.findIndex(t => t.id === currentUserId) + 1}</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex-1 min-w-[140px]">
-              <p className="text-[10px] uppercase font-bold tracking-widest text-purple-300 mb-1">Points</p>
-              <p className="text-2xl font-black">{myTeam ? myTeam.totalPoints.toFixed(1) : '0.0'}</p>
+              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-purple-300 mb-1">Points</p>
+              <p className="text-2xl font-black tracking-tight">{myTeam ? myTeam.totalPoints.toFixed(1) : '0.0'}</p>
             </div>
           </div>
         </div>
@@ -50,7 +50,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teams, onSelectLeague, recentPick
           </div>
           <button
             onClick={onSelectLeague}
-            className="text-xs font-black text-purple-600 uppercase tracking-widest hover:text-purple-700 transition-colors"
+            className="text-xs font-black text-purple-600 uppercase tracking-[0.2em] hover:text-purple-700 transition-colors"
           >
             Manage League
           </button>
@@ -108,7 +108,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teams, onSelectLeague, recentPick
         <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Activity className="w-5 h-5 text-purple-500" />
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Feed</h3>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">Feed</h3>
           </div>
         </div>
         <div className="divide-y divide-slate-50 max-h-80 overflow-y-auto">
@@ -135,7 +135,7 @@ const Dashboard: React.FC<DashboardProps> = ({ teams, onSelectLeague, recentPick
                       <span className="mx-1">picked up</span>
                       <span className="font-black text-purple-600">{pick.show_name}</span>
                     </p>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{date}</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">{date}</div>
                   </div>
                 </div>
               );
