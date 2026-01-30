@@ -31,7 +31,8 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
         streaming_slots: league.streaming_slots ?? 3,
         waiver_type: league.waiver_type || 'rolling',
         draft_start_time: '',
-        waiver_cooldown_days: league.waiver_cooldown_days ?? 7
+        waiver_cooldown_days: league.waiver_cooldown_days ?? 7,
+        redraft_every_period: league.redraft_every_period ?? true
     });
 
     const isManager = league.created_by === currentUserId;
@@ -51,7 +52,8 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
             streaming_slots: league.streaming_slots ?? 3,
             waiver_type: league.waiver_type || 'rolling',
             draft_start_time: formatForInput(league.draft_start_time),
-            waiver_cooldown_days: league.waiver_cooldown_days ?? 7
+            waiver_cooldown_days: league.waiver_cooldown_days ?? 7,
+            redraft_every_period: league.redraft_every_period ?? true
         });
     }, [league]);
 
@@ -107,7 +109,8 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                 streaming_slots: streamingSlots,
                 waiver_type: formState.waiver_type as any,
                 draft_start_time: isoDate,
-                waiver_cooldown_days: cooldown
+                waiver_cooldown_days: cooldown,
+                redraft_every_period: formState.redraft_every_period
             });
             // Force refresh of data
             await onRefresh();
@@ -204,28 +207,18 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                     </div>
 
                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2"><Tv className="w-4 h-4" /> Roster Slots</h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2"><Tv className="w-4 h-4" /> Roster Management</h3>
+                        <div className="flex items-center justify-between">
                             <div>
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cable Slots</label>
-                                <input
-                                    type="number"
-                                    disabled={!isManager}
-                                    value={formState.cable_slots}
-                                    onChange={(e) => handleChange('cable_slots', e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm disabled:bg-slate-50 disabled:text-slate-500"
-                                />
+                                <h4 className="text-xs font-bold text-slate-700">Monthly Redraft</h4>
+                                <p className="text-[10px] text-slate-500 font-medium">Reset rosters every matchup period?</p>
                             </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Streaming Slots</label>
-                                <input
-                                    type="number"
-                                    disabled={!isManager}
-                                    value={formState.streaming_slots}
-                                    onChange={(e) => handleChange('streaming_slots', e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm disabled:bg-slate-50 disabled:text-slate-500"
-                                />
-                            </div>
+                            <button
+                                onClick={() => isManager && handleChange('redraft_every_period', !formState.redraft_every_period)}
+                                className={`w-10 h-6 rounded-full relative transition-colors ${formState.redraft_every_period ? 'bg-purple-600' : 'bg-slate-300'}`}
+                            >
+                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${formState.redraft_every_period ? 'right-1' : 'left-1'}`} />
+                            </button>
                         </div>
                     </div>
 

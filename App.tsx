@@ -49,6 +49,7 @@ const App: React.FC = () => {
   const [orderedMemberIds, setOrderedMemberIds] = useState<string[]>([]);
   const [periods, setPeriods] = useState<any[]>([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
+  const [careerStats, setCareerStats] = useState<Record<string, { total_points: number, avg_finish: number }>>({});
 
   // Roster View State (Sidebar)
   const [viewingRosterId, setViewingRosterId] = useState<string>("");
@@ -339,6 +340,10 @@ const App: React.FC = () => {
       // 4. Get Adjusted Scores from DB View
       const leagueScores = await api.getLeagueLeaderboard(league.id, currentPeriodId || undefined);
 
+      // 5. Get Career Stats
+      const stats = await api.getLeagueCareerStats(league.id);
+      setCareerStats(stats);
+
       const isLeagueFull = memberIds.length >= (league.max_members || 4);
       const hasDraftActivity = picks.length > 0;
 
@@ -615,10 +620,12 @@ const App: React.FC = () => {
 
 
       {joiningLeague && (
-        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center animate-fade-in">
-          <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
-          <h2 className="text-xl font-bold text-slate-800">Joining League...</h2>
-          <p className="text-slate-500">Setting up your team</p>
+        <div className="fixed inset-0 glass z-50 flex flex-col items-center justify-center animate-fade-in">
+          <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl flex flex-col items-center border-[12px] border-purple-50 animate-bounce-in">
+            <Loader2 className="w-16 h-16 text-purple-600 animate-spin mb-6" />
+            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Setting the Stage</h2>
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-2">Initializing Your Network...</p>
+          </div>
         </div>
       )}
 
@@ -773,6 +780,7 @@ const App: React.FC = () => {
             onDropShow={handleDropShow}
             isDraftOver={isDraftOver}
             cooldownExpiresAt={cooldownExpiresAt}
+            careerStats={careerStats}
           />
         )}
 

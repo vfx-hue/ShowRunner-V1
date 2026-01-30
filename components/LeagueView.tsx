@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Team, Show, STANDARD_NETWORK_MULTIPLIER } from '../types';
-import { ArrowLeft, Users, RefreshCw, UserPlus, Info, UserMinus, Settings, Clock, Tv, PlayCircle, Smartphone, Flame, Calendar, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Users, RefreshCw, UserPlus, Info, UserMinus, Settings, Clock, Tv, PlayCircle, Smartphone, Flame, Calendar, ChevronDown, Trophy } from 'lucide-react';
 import LeagueSettingsModal from './LeagueSettingsModal';
 import {
   AreaChart,
@@ -49,6 +49,7 @@ interface LeagueViewProps {
   periods: any[];
   selectedPeriodId: string | null;
   onPeriodChange: (periodId: string) => void;
+  careerStats?: Record<string, { total_points: number, avg_finish: number }>;
 }
 
 const LeagueView: React.FC<LeagueViewProps> = ({
@@ -68,6 +69,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
   periods,
   selectedPeriodId,
   onPeriodChange,
+  careerStats = {},
 }) => {
   const [hoveredTeamId, setHoveredTeamId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -128,7 +130,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
 
     // Filter by time range
     if (timeRange !== 'all' && sortedDates.length > 0) {
-      const now = Math.max(...sortedDates); // Use latest data as anchor
+      const now = Date.now(); // Use current time for 7d/30d filter
       const days = timeRange === '7d' ? 7 : 30;
       const cutoff = now - (days * 24 * 60 * 60 * 1000);
       sortedDates = sortedDates.filter(ts => ts >= cutoff);
@@ -195,7 +197,27 @@ const LeagueView: React.FC<LeagueViewProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-4xl font-black text-slate-900 tracking-tight">{leagueName}</h1>
-              <div className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wider">Live</div>
+              {(() => {
+                const p = periods.find(p => p.id === selectedPeriodId);
+                if (p?.status === 'active') return <div className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wider text-center">Live</div>;
+
+                // Finalization Window Logic (7 days)
+                if (p?.status === 'finished') {
+                  // Month end + 7 days
+                  const [year, month] = p.month_year.split('-').map(Number);
+                  const periodEndDate = new Date(year, month, 0); // Last day of month
+                  const finalizationDate = new Date(periodEndDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+                  const isFinalized = Date.now() > finalizationDate.getTime();
+
+                  return (
+                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider text-center ${isFinalized ? 'bg-slate-50 text-slate-500 border-slate-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                      {isFinalized ? 'Finalized' : 'Pending Finalization'}
+                    </div>
+                  );
+                }
+
+                return <div className="bg-slate-50 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-100 uppercase tracking-wider text-center">Snapshot</div>;
+              })()}
             </div>
             <div className="flex items-center gap-4 text-sm text-slate-500 font-semibold">
               <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-slate-400" /> {teams.length} Managers</span>
@@ -420,6 +442,13 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                           </div>
                         )}
                       </div>
+                      {careerStats[team.id] && (
+                        <div className="flex items-center gap-2.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          <span className="flex items-center gap-1"><Trophy className="w-3 h-3 text-amber-500/60" /> {Math.floor(careerStats[team.id].total_points).toLocaleString()}</span>
+                          <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                          <span>Avg Rank: #{careerStats[team.id].avg_finish.toFixed(1)}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -447,8 +476,8 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                 </div>
 
                 {/* Roster Table */}
-                <div className="flex-1">
-                  <table className="w-full text-sm text-left border-separate border-spacing-0">
+                <div className="flex-1 overflow-x-auto">
+                  <table className="w-full text-sm text-left border-separate border-spacing-0 min-w-[500px]">
                     <thead>
                       <tr className="bg-slate-50/50">
                         <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest border-b border-slate-100">Show</th>

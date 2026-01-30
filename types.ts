@@ -62,6 +62,7 @@ export interface League {
 
   // New Period Reference
   current_period_id?: string;
+  redraft_every_period?: boolean;
 }
 
 export interface UserProfile {

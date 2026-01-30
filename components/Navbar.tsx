@@ -26,19 +26,22 @@ const Navbar: React.FC<NavbarProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
-    <header className="bg-white border-b border-gray-200 pt-4 pb-2 px-6 sticky top-0 z-50">
+    <header className="glass pt-4 pb-2 px-6 sticky top-0 z-50">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         {/* Left: Logo */}
         <div
-          className="flex items-center gap-2 cursor-pointer group hover-lift"
+          className="flex items-center gap-3 cursor-pointer group hover-lift"
           onClick={onNavigateHome}
         >
-          <div className="bg-purple-600 p-1.5 rounded-lg shadow-sm shadow-purple-200 group-hover:bg-purple-700 transition-colors">
+          <div className="bg-gradient-to-br from-purple-600 to-indigo-600 p-2 rounded-xl shadow-lg shadow-purple-200 group-hover:shadow-purple-300 transition-all">
             <Tv className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight uppercase group-hover:text-purple-700 transition-colors">
-            ShowRunner <span className="text-xs normal-case text-slate-500 font-medium tracking-normal ml-1">Fantasy League</span>
-          </h1>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-black text-slate-900 tracking-tight uppercase group-hover:text-purple-700 transition-colors leading-none">
+              ShowRunner
+            </h1>
+            <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Fantasy League</span>
+          </div>
         </div>
 
         {/* Center: Navigation Links */}

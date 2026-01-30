@@ -114,12 +114,24 @@ export const fetchLeagueMembers = async (leagueId: string) => {
 }
 
 export const getLeagueLeaderboard = async (leagueId: string, periodId?: string) => {
-  // 1. Fetch current period if not provided
   let activePeriodId = periodId;
+  let activePeriod: LeaguePeriod | null = null;
+
   if (!activePeriodId) {
-    const period = await getCurrentPeriod(leagueId);
-    activePeriodId = period?.id;
+    activePeriod = await getCurrentPeriod(leagueId);
+    activePeriodId = activePeriod?.id;
+  } else {
+    const { data, error } = await supabase
+      .from('league_periods')
+      .select('*')
+      .eq('id', activePeriodId)
+      .maybeSingle();
+    activePeriod = data;
   }
+
+  if (!activePeriodId) return [];
+
+  const draftStartTime = activePeriod?.draft_start_time || null;
 
   // 2. Fetch all picks for this period
   const { data: picks, error: picksError } = await supabase
@@ -156,27 +168,28 @@ export const getLeagueLeaderboard = async (leagueId: string, periodId?: string) 
   // 4. Calculate Heat-Based Scores
   const userScores: Record<string, number> = {};
 
-  const calculateMomentumScore = (show: any) => {
+  const calculateMomentumScore = (show: any, draftTime: string | null) => {
     if (!show || !show.viewership_data || show.viewership_data.length === 0) return 0;
 
-    // Sort history by date descending
+    // Sort history by date ascending for easier cumulative processing
     const history = [...show.viewership_data].sort((a, b) =>
-      new Date(b.rating_date).getTime() - new Date(a.rating_date).getTime()
+      new Date(a.rating_date).getTime() - new Date(b.rating_date).getTime()
     );
 
-    const latest = history[0];
-    const previous = history[1]; // Penultimate entry for delta
+    // Filter relevant entries (Day after draft)
+    const validEntries = draftTime
+      ? history.filter(h => {
+        const ratingDate = new Date(h.rating_date);
+        const draftDate = new Date(draftTime);
+        // Set to start of day for inclusive comparison if needed, 
+        // but user said "day after", so > is correct.
+        return ratingDate.getTime() > draftDate.getTime();
+      })
+      : [history[history.length - 1]]; // Fallback to latest
 
-    // Base Score: 1 viewer = 1 point
-    let totalScore = latest.viewers || 0;
+    if (validEntries.length === 0) return 0;
 
-    // Heat Bonus (Growth %): Score = Current * (1 + GrowthRate)
-    if (previous && previous.viewers > 0 && latest.viewers > previous.viewers) {
-      const growthRate = (latest.viewers - previous.viewers) / previous.viewers;
-      totalScore = Math.floor(totalScore * (1 + growthRate));
-    }
-
-    // Apply Network Multiplier
+    // Apply Network Multiplier logic
     let category: 'cable' | 'streaming' = 'cable';
     if (show.type) {
       const lowerType = show.type.toLowerCase().trim();
@@ -188,12 +201,31 @@ export const getLeagueLeaderboard = async (leagueId: string, periodId?: string) 
     }
     const multiplier = category === 'streaming' ? 1 : 1.5;
 
-    return totalScore * multiplier;
+    let totalPoints = 0;
+
+    validEntries.forEach((entry) => {
+      // Find growth relative to the entry IMMEDIATELY PRECEDING THIS ONE in the FULL history
+      const entryIdx = history.findIndex(h => h.rating_date === entry.rating_date);
+      const previous = history[entryIdx - 1];
+
+      let entryScore = entry.viewers || 0;
+
+      // Heat Bonus (Growth %): Score = Current * (1 + GrowthRate)
+      // Note: Previous entry can be BEFORE the draft
+      if (previous && previous.viewers > 0 && entry.viewers > previous.viewers) {
+        const growthRate = (entry.viewers - previous.viewers) / previous.viewers;
+        entryScore = Math.floor(entryScore * (1 + growthRate));
+      }
+
+      totalPoints += entryScore;
+    });
+
+    return totalPoints * multiplier;
   };
 
   picks.forEach((pick: any) => {
     const show = shows.find((s: any) => s.id === pick.show_id);
-    const showPoints = calculateMomentumScore(show);
+    const showPoints = calculateMomentumScore(show, draftStartTime);
 
     if (!userScores[pick.user_id]) userScores[pick.user_id] = 0;
     userScores[pick.user_id] += showPoints;
@@ -404,7 +436,8 @@ export const createLeague = async (userId: string, name: string, draftStartTime:
       streaming_slots: 3, // Default
       waiver_type: 'rolling', // Default
       max_adds_per_week: 3, // Default
-      waiver_cooldown_days: 7 // Default
+      waiver_cooldown_days: 7, // Default
+      redraft_every_period: true // Default
     })
     .select()
     .single();
@@ -431,8 +464,8 @@ export const createLeague = async (userId: string, name: string, draftStartTime:
 
 // --- League Period Management ---
 
-export const createLeaguePeriod = async (leagueId: string, monthYear: string, status: 'drafting' | 'active' | 'finished' = 'drafting', draftStartTime?: string) => {
-  const { data, error } = await supabase
+export const createLeaguePeriod = async (leagueId: string, monthYear: string, status: 'drafting' | 'active' | 'finished' = 'drafting', draftStartTime?: string, copyRostersFromPeriodId?: string) => {
+  const { data: period, error } = await supabase
     .from('league_periods')
     .insert({
       league_id: leagueId,
@@ -448,10 +481,28 @@ export const createLeaguePeriod = async (leagueId: string, monthYear: string, st
   // Update league's current_period_id
   await supabase
     .from('leagues')
-    .update({ current_period_id: data.id })
+    .update({ current_period_id: period.id })
     .eq('id', leagueId);
 
-  return data;
+  // Handle Roster Carry-over if requested
+  if (copyRostersFromPeriodId) {
+    const { data: oldPicks } = await supabase
+      .from('picks')
+      .select('user_id, show_id, show_name, is_waiver_add')
+      .eq('league_id', leagueId)
+      .eq('period_id', copyRostersFromPeriodId);
+
+    if (oldPicks && oldPicks.length > 0) {
+      const newPicks = oldPicks.map(p => ({
+        ...p,
+        league_id: leagueId,
+        period_id: period.id
+      }));
+      await supabase.from('picks').insert(newPicks);
+    }
+  }
+
+  return period;
 };
 
 export const fetchLeaguePeriods = async (leagueId: string): Promise<LeaguePeriod[]> => {
@@ -499,6 +550,45 @@ export const updateLeague = async (leagueId: string, updates: Partial<League>) =
     .eq('id', leagueId);
 
   if (error) throw error;
+};
+
+export const getLeagueCareerStats = async (leagueId: string) => {
+  const { data: periods } = await supabase
+    .from('league_periods')
+    .select('id')
+    .eq('league_id', leagueId)
+    .eq('status', 'finished');
+
+  if (!periods || periods.length === 0) return {};
+
+  const careerStats: Record<string, { total_points: number, ranks: number[] }> = {};
+
+  // For each finished period, get the leaderboard to see points and ranks
+  for (const period of periods) {
+    try {
+      const leaderboard = await getLeagueLeaderboard(leagueId, period.id);
+      leaderboard.forEach((entry, index) => {
+        if (!careerStats[entry.user_id]) {
+          careerStats[entry.user_id] = { total_points: 0, ranks: [] };
+        }
+        careerStats[entry.user_id].total_points += entry.adjusted_total_points;
+        careerStats[entry.user_id].ranks.push(index + 1);
+      });
+    } catch (e) {
+      console.error(`Error processing period ${period.id}:`, e);
+    }
+  }
+
+  const finalStats: Record<string, { total_points: number, avg_finish: number }> = {};
+  Object.keys(careerStats).forEach(uid => {
+    const s = careerStats[uid];
+    finalStats[uid] = {
+      total_points: s.total_points,
+      avg_finish: s.ranks.length > 0 ? s.ranks.reduce((a, b) => a + b, 0) / s.ranks.length : 0
+    };
+  });
+
+  return finalStats;
 };
 
 export const joinLeague = async (userId: string, code: string) => {
