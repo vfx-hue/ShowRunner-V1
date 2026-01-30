@@ -167,7 +167,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto" onClick={onClose}>
+        <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-20 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto" onClick={onClose}>
             <div className="bg-white rounded-2xl shadow-2xl p-5 w-full max-w-md animate-slide-up relative my-8" onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
                     <X className="w-5 h-5" />

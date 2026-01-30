@@ -335,7 +335,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
             </div>
 
             <div className="h-[400px] w-full">
-              {chartData.length > 0 ? (
+              {chartData.length > 1 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={chartData}
@@ -414,8 +414,8 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-[2rem] border-4 border-dashed border-slate-100">
-                  <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Awaiting Season Data</p>
-                  <p className="text-xs text-slate-400 mt-2 font-medium">Ratings start appearing after the first week</p>
+                  <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">League has just started</p>
+                  <p className="text-xs text-slate-400 mt-2 font-medium">Ratings start appearing after the first week of matchups</p>
                 </div>
               )}
             </div>
