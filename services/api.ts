@@ -363,7 +363,7 @@ export const createLeague = async (userId: string, name: string, draftStartTime:
       invite_code: code,
       created_by: userId,
       draft_start_time: draftStartTime,
-      max_members: 4,
+      max_members: 10,
       cable_slots: 3, // Default
       streaming_slots: 3, // Default
       waiver_type: 'rolling', // Default

@@ -24,7 +24,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
     const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
     const [formState, setFormState] = useState({
-        max_members: league.max_members ?? 4,
+        max_members: league.max_members ?? 10,
         cable_slots: league.cable_slots ?? 3,
         streaming_slots: league.streaming_slots ?? 3,
         waiver_type: league.waiver_type || 'rolling',
@@ -44,7 +44,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
 
     useEffect(() => {
         setFormState({
-            max_members: league.max_members ?? 4,
+            max_members: league.max_members ?? 10,
             cable_slots: league.cable_slots ?? 3,
             streaming_slots: league.streaming_slots ?? 3,
             waiver_type: league.waiver_type || 'rolling',

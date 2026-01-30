@@ -15,6 +15,7 @@ import Leaderboard from './components/Leaderboard';
 import GlobalTeamLeaderboard from './components/GlobalTeamLeaderboard';
 import Profile from './components/Profile';
 import WaiverTransactionModal from './components/WaiverTransactionModal';
+import HowToPlay from './components/HowToPlay';
 import { UserProfile } from './types';
 import { Loader2, ChevronDown } from 'lucide-react';
 
@@ -572,6 +573,7 @@ const App: React.FC = () => {
         onNavigateLeaderboard={() => setView('LEADERBOARD')}
         onNavigateAdmin={() => setView('GLOBAL_TEAMS')}
         onNavigateProfile={() => setView('PROFILE')}
+        onNavigateHowToPlay={() => setView('HOW_TO_PLAY')}
         onLogout={handleLogout}
         userProfile={userProfile}
       />
@@ -618,6 +620,18 @@ const App: React.FC = () => {
             existingLeagues={userLeagues}
             onLeagueSelected={(league) => loadLeagueData(league)}
             isJoining={loadingData}
+          />
+        )}
+
+        {view === 'HOW_TO_PLAY' && (
+          <HowToPlay
+            onBack={() => {
+              if (currentLeague) {
+                setView('LEAGUE');
+              } else {
+                setView('ONBOARDING');
+              }
+            }}
           />
         )}
 

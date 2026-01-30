@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { Bell, ChevronDown, Tv, LogOut, User, Trophy, Users } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Bell, ChevronDown, Tv, LogOut, User, Trophy, Users, HelpCircle } from 'lucide-react';
 
 import { UserProfile } from '../types';
+import NotificationsDropdown from './NotificationsDropdown';
 
 interface NavbarProps {
   onNavigateHome: () => void;
   onNavigateLeaderboard: () => void;
   onNavigateAdmin: () => void;
   onNavigateProfile: () => void;
+  onNavigateHowToPlay: () => void;
   onLogout: () => void;
   userProfile: UserProfile | null;
 }
@@ -17,11 +19,27 @@ const Navbar: React.FC<NavbarProps> = ({
   onNavigateLeaderboard,
   onNavigateAdmin,
   onNavigateProfile,
+  onNavigateHowToPlay,
   onLogout,
   userProfile
 }) => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  // Close notifications when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="bg-white border-b border-gray-200 pt-4 pb-2 px-6 sticky top-0 z-50">
@@ -48,15 +66,27 @@ const Navbar: React.FC<NavbarProps> = ({
           <button onClick={onNavigateAdmin} className="hover:text-purple-600 transition-colors flex items-center gap-1">
             <Users className="w-4 h-4" /> Top Teams
           </button>
-          <button className="hover:text-purple-600 transition-colors">News Feed</button>
-          <button className="hover:text-purple-600 transition-colors">How to Play</button>
+          <button onClick={onNavigateHowToPlay} className="hover:text-purple-600 transition-colors flex items-center gap-1">
+            <HelpCircle className="w-4 h-4" /> How to Play
+          </button>
         </nav>
 
         {/* Right: Actions & Profile */}
         <div className="flex items-center gap-4">
-          <button className="text-slate-500 hover:text-purple-600 transition-colors">
-            <Bell className="w-5 h-5" />
-          </button>
+          <div className="relative" ref={notificationRef}>
+            <button
+              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              className={`text-slate-500 hover:text-purple-600 transition-colors relative ${isNotificationsOpen ? 'text-purple-600' : ''}`}
+            >
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+            </button>
+
+            <NotificationsDropdown
+              isOpen={isNotificationsOpen}
+              onClose={() => setIsNotificationsOpen(false)}
+            />
+          </div>
 
           <div className="relative">
             <button

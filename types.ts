@@ -74,4 +74,4 @@ export interface Pick {
   is_waiver_add: boolean;
 }
 
-export type ViewState = 'AUTH' | 'ONBOARDING' | 'DASHBOARD' | 'LEAGUE' | 'DRAFT' | 'WAITING_ROOM' | 'LEADERBOARD' | 'GLOBAL_TEAMS' | 'PROFILE';
+export type ViewState = 'AUTH' | 'ONBOARDING' | 'DASHBOARD' | 'LEAGUE' | 'DRAFT' | 'WAITING_ROOM' | 'LEADERBOARD' | 'GLOBAL_TEAMS' | 'PROFILE' | 'HOW_TO_PLAY';
