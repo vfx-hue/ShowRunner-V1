@@ -18,15 +18,71 @@ import WaiverTransactionModal from './components/WaiverTransactionModal';
 import HowToPlay from './components/HowToPlay';
 import { UserProfile } from './types';
 import { Loader2, ChevronDown } from 'lucide-react';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+  Navigate,
+  useParams
+} from 'react-router-dom';
 
 const TEAM_COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#10b981", "#f59e0b", "#3b82f6"];
 
+// Helper for legacy invite redirects
+const InviteRedirect: React.FC = () => {
+  const { inviteCode } = useParams<{ inviteCode: string }>();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (inviteCode) {
+      console.log("Redirecting legacy invite:", inviteCode);
+      localStorage.setItem('pending_league_invite', inviteCode);
+      navigate('/', { replace: true });
+    }
+  }, [inviteCode, navigate]);
+
+  return (
+    <div className="h-screen flex items-center justify-center bg-gray-50 text-slate-400">
+      Redirecting invite...
+    </div>
+  );
+};
+
 const App: React.FC = () => {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
+  );
+};
+
+const AppContent: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [session, setSession] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
 
-  const [view, setView] = useState<ViewState>('AUTH');
+  // Deprecated: view state is now handled by URL
+  const [view, setViewInternal] = useState<ViewState>('AUTH');
+
+  // Backward compatibility wrapper
+  const setView = (v: ViewState) => {
+    setViewInternal(v);
+    if (v === 'AUTH') navigate('/auth');
+    else if (v === 'ONBOARDING') navigate('/');
+    else if (v === 'DASHBOARD' && currentLeague) navigate(`/league/${currentLeague.id}/dashboard`);
+    else if (v === 'LEAGUE' && currentLeague) navigate(`/league/${currentLeague.id}`);
+    else if (v === 'DRAFT' && currentLeague) navigate(`/league/${currentLeague.id}/draft`);
+    else if (v === 'WAITING_ROOM' && currentLeague) navigate(`/league/${currentLeague.id}/waiting`);
+    else if (v === 'LEADERBOARD') navigate('/leaderboard');
+    else if (v === 'GLOBAL_TEAMS') navigate('/global');
+    else if (v === 'PROFILE') navigate('/profile');
+    else if (v === 'HOW_TO_PLAY') navigate('/how-to-play');
+  };
   const [currentLeague, setCurrentLeague] = useState<League | null>(null);
   const [leagueMemberCount, setLeagueMemberCount] = useState<number>(0);
   const [userLeagues, setUserLeagues] = useState<League[]>([]);
@@ -248,6 +304,29 @@ const App: React.FC = () => {
     return () => { supabase.removeChannel(channel); };
   }, [currentLeague?.id]);
 
+  // --- DEEP LINKING SUPPORT ---
+  useEffect(() => {
+    // If we have a league ID in the URL but it's not the current league, load it
+    const pathParts = location.pathname.split('/');
+    const leagueIdx = pathParts.findIndex(p => p === 'league');
+    if (leagueIdx !== -1 && pathParts[leagueIdx + 1]) {
+      const urlLeagueId = pathParts[leagueIdx + 1];
+      if (session?.user && (!currentLeague || currentLeague.id !== urlLeagueId)) {
+        console.log("Deep link detected for league:", urlLeagueId);
+        api.fetchUserLeagues(session.user.id).then(leagues => {
+          const target = leagues.find(l => l.id === urlLeagueId);
+          if (target) {
+            loadLeagueData(target);
+          } else {
+            // If they aren't in the league, maybe they are trying to join?
+            // For now, just go home
+            navigate('/');
+          }
+        });
+      }
+    }
+  }, [location.pathname, session, currentLeague]);
+
 
   useEffect(() => {
     if (session?.user) {
@@ -442,12 +521,20 @@ const App: React.FC = () => {
       }
 
       // 6. Navigation Logic:
-      // If we are in DRAFT or WAITING_ROOM, we might want to stay there.
-      // If we've just loaded from ONBOARDING, we go to LEAGUE.
-      setView(currentView => {
-        if (currentView === 'DRAFT' || currentView === 'WAITING_ROOM') return currentView;
-        return 'LEAGUE';
-      });
+      // In professional routing, we navigate based on the current state and parameters.
+      if (location.pathname === '/' || location.pathname === '/auth') {
+        const isLeagueFull = memberIds.length >= (league.max_members ?? 4);
+        const hasDraftActivity = picks.length > 0;
+        const now = new Date();
+        const draftTime = league.draft_start_time ? new Date(league.draft_start_time) : new Date();
+        const isTimePassed = now >= draftTime;
+
+        if (!isLeagueFull || (!isTimePassed && !hasDraftActivity)) {
+          navigate(`/league/${league.id}/waiting`);
+        } else {
+          navigate(`/league/${league.id}`);
+        }
+      }
 
 
     } catch (e: any) {
@@ -605,15 +692,11 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col relative bg-gray-50 text-slate-900">
       <Navbar
-        onNavigateHome={() => {
-          setView('ONBOARDING');
-          setCurrentLeague(null);
-          localStorage.removeItem('active_league_id');
-        }}
-        onNavigateLeaderboard={() => setView('LEADERBOARD')}
-        onNavigateAdmin={() => setView('GLOBAL_TEAMS')}
-        onNavigateProfile={() => setView('PROFILE')}
-        onNavigateHowToPlay={() => setView('HOW_TO_PLAY')}
+        onNavigateHome={() => navigate('/')}
+        onNavigateLeaderboard={() => navigate('/leaderboard')}
+        onNavigateAdmin={() => navigate('/global')}
+        onNavigateProfile={() => navigate('/profile')}
+        onNavigateHowToPlay={() => navigate('/how-to-play')}
         onLogout={handleLogout}
         userProfile={userProfile}
       />
@@ -655,199 +738,171 @@ const App: React.FC = () => {
       )}
 
       <main className="flex-1 w-full pb-10">
+        <Routes>
+          <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
 
-        {view === 'ONBOARDING' && (
-          <LeagueOnboarding
-            userId={session.user.id}
-            existingLeagues={userLeagues}
-            onLeagueSelected={(league) => loadLeagueData(league)}
-            isJoining={loadingData}
-          />
-        )}
-
-        {view === 'HOW_TO_PLAY' && (
-          <HowToPlay
-            onBack={() => {
-              if (currentLeague) {
-                setView('LEAGUE');
-              } else {
-                setView('ONBOARDING');
-              }
-            }}
-          />
-        )}
-
-        {view === 'LEADERBOARD' && (
-          <Leaderboard
-            onBack={() => {
-              if (currentLeague) {
-                // If we were in a league, go back to league view or draft based on state
-                // Simple heuristic: if we have a current league loaded, go back to dashboard/league
-                setView('LEAGUE');
-              } else {
-                setView('ONBOARDING');
-              }
-            }}
-            onShowClick={setSelectedShow}
-          />
-        )}
-
-        {view === 'GLOBAL_TEAMS' && (
-          <GlobalTeamLeaderboard
-            onBack={() => {
-              if (currentLeague) {
-                setView('LEAGUE');
-              } else {
-                setView('ONBOARDING');
-              }
-            }}
-          />
-        )}
-
-        {view === 'PROFILE' && userProfile && (
-          <Profile
-            user={userProfile}
-            onBack={() => {
-              if (currentLeague) {
-                setView('LEAGUE');
-              } else {
-                setView('ONBOARDING');
-              }
-            }}
-            onUpdate={(updated) => {
-              setUserProfile(updated);
-              // If we are in a league, we should refresh the league data to see updated profile sitewide
-              if (currentLeague) {
-                loadLeagueData(currentLeague);
-              }
-            }}
-          />
-        )}
-
-        {view === 'WAITING_ROOM' && currentLeague && (
-          <LeagueWaitingRoom
-            league={currentLeague}
-            memberCount={leagueMemberCount}
-            onEnterDraft={() => {
-              loadLeagueData(currentLeague).then(() => setView('DRAFT'));
-            }}
-            onRefresh={() => loadLeagueData(currentLeague)}
-            currentUserId={session.user.id}
-          />
-        )}
-
-        {view === 'DASHBOARD' && currentLeague && (
-          <>
-            <div className="flex justify-between items-center max-w-2xl mx-auto mt-8 px-4">
-              <span className="text-sm font-bold text-slate-400">League Code: {currentLeague.code}</span>
-              <button
-                onClick={() => setView('DRAFT')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow-md transition-colors"
-              >
-                Enter Draft Room
-              </button>
-            </div>
-            <Dashboard
-              teams={teams}
-              onSelectLeague={() => setView('LEAGUE')}
-              recentPicks={recentPicks}
-              currentUserId={session.user.id}
-              showCooldown={!!cooldownExpiresAt} // Dashboard keeps boolean for now or update it
-              league={currentLeague}
+          <Route path="/" element={
+            <LeagueOnboarding
+              userId={session.user.id}
+              existingLeagues={userLeagues}
+              onLeagueSelected={(league) => loadLeagueData(league)}
+              isJoining={loadingData}
             />
-          </>
-        )}
+          } />
 
-        {view === 'LEAGUE' && currentLeague && (
-          <LeagueView
-            teams={teams}
-            periods={periods}
-            selectedPeriodId={selectedPeriodId}
-            onPeriodChange={(pid) => loadLeagueData(currentLeague!, shows, pid)}
-            onBack={() => {
-              setView('ONBOARDING');
-              setCurrentLeague(null);
-              localStorage.removeItem('active_league_id');
-            }}
-            onUpdateRatings={() => loadLeagueData(currentLeague!, shows, selectedPeriodId || undefined)}
-            loading={loadingData}
-            onWaiverWire={() => setView('DRAFT')}
-            leagueName={currentLeague.name}
-            onShowClick={setSelectedShow}
-            currentUserId={session.user.id}
-            leagueManagerId={currentLeague.created_by}
-            onRemoveMember={handleRemoveMember}
-            onDropShow={handleDropShow}
-            isDraftOver={isDraftOver}
-            cooldownExpiresAt={cooldownExpiresAt}
-            careerStats={careerStats}
-          />
-        )}
+          <Route path="/how-to-play" element={
+            <HowToPlay onBack={() => navigate(-1)} />
+          } />
 
-        {view === 'DRAFT' && currentLeague && (
-          <div className="max-w-[1600px] mx-auto mt-8 px-4">
-            <button
-              onClick={() => setView('LEAGUE')}
-              className="mb-4 text-slate-500 hover:text-slate-900 flex items-center gap-2"
-            >
-              &larr; Back to Dashboard
-            </button>
-            <div className="mb-6">
-              <h2 className="text-3xl font-extrabold text-slate-900">{isDraftOver ? 'Waiver Wire' : 'Live Draft Room'}</h2>
-              <p className="text-slate-500">{isDraftOver ? 'Claim available shows for next week.' : 'Pick up available shows for your roster.'}</p>
-            </div>
+          <Route path="/leaderboard" element={
+            <Leaderboard onBack={() => navigate(-1)} onShowClick={setSelectedShow} />
+          } />
 
-            <div className="flex flex-col xl:flex-row gap-6 items-start">
-              <div className="flex-1 min-w-0">
-                <DraftBoard
-                  availableShows={getAvailableShows()}
-                  currentTeam={getCurrentUserTeam()}
+          <Route path="/global" element={
+            <GlobalTeamLeaderboard onBack={() => navigate(-1)} />
+          } />
+
+          <Route path="/profile" element={
+            userProfile ? (
+              <Profile
+                user={userProfile}
+                onBack={() => navigate(-1)}
+                onUpdate={(updated) => {
+                  setUserProfile(updated);
+                  if (currentLeague) loadLeagueData(currentLeague);
+                }}
+              />
+            ) : <Navigate to="/" />
+          } />
+
+          <Route path="/league/:leagueId/waiting" element={
+            currentLeague ? (
+              <LeagueWaitingRoom
+                league={currentLeague}
+                memberCount={leagueMemberCount}
+                onEnterDraft={() => {
+                  loadLeagueData(currentLeague).then(() => navigate(`/league/${currentLeague.id}/draft`));
+                }}
+                onRefresh={() => loadLeagueData(currentLeague)}
+                currentUserId={session.user.id}
+              />
+            ) : <Navigate to="/" />
+          } />
+
+          <Route path="/league/:leagueId/dashboard" element={
+            currentLeague ? (
+              <>
+                <div className="flex justify-between items-center max-w-2xl mx-auto mt-8 px-4">
+                  <span className="text-sm font-bold text-slate-400">League Code: {currentLeague.code}</span>
+                  <button
+                    onClick={() => navigate(`/league/${currentLeague.id}/draft`)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow-md transition-colors"
+                  >
+                    Enter Draft Room
+                  </button>
+                </div>
+                <Dashboard
+                  teams={teams}
+                  onSelectLeague={() => navigate(`/league/${currentLeague.id}`)}
+                  recentPicks={recentPicks}
+                  currentUserId={session.user.id}
+                  showCooldown={!!cooldownExpiresAt}
                   league={currentLeague}
-                  onDraft={handleDraftShow}
-                  isDrafting={true}
-                  onShowClick={setSelectedShow}
-                  isMyTurn={isMyTurn}
-                  currentDrafterName={currentDrafterInfo.name}
-                  picksUntilTurn={picksUntilTurn}
-                  lastPick={recentPicks[0]}
-                  addsRemaining={isDraftOver ? (currentLeague.max_adds_per_week || 3) - weeklyMovesCount : undefined}
-
-                  maxAdds={currentLeague.max_adds_per_week}
-                  viewMode={isDraftOver ? 'waiver' : 'draft'}
-                  cooldownExpiresAt={cooldownExpiresAt}
                 />
-              </div>
+              </>
+            ) : <Navigate to="/" />
+          } />
 
-              {!isDraftOver && (
-                <div className="w-full xl:w-96 shrink-0 flex flex-col gap-4 xl:sticky xl:top-24">
-                  {/* Control Panel */}
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Viewing Roster</label>
-                    <div className="relative">
-                      <select
-                        value={viewingRosterId || ''}
-                        onChange={(e) => setViewingRosterId(e.target.value)}
-                        className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-lg pl-3 pr-8 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer hover:bg-slate-100"
-                      >
-                        {teams.map(t => (
-                          <option key={t.id} value={t.id}>
-                            {t.name} {t.id === session?.user?.id ? '(You)' : ''}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    </div>
+          <Route path="/league/:leagueId" element={
+            currentLeague ? (
+              <LeagueView
+                teams={teams}
+                periods={periods}
+                selectedPeriodId={selectedPeriodId}
+                onPeriodChange={(pid) => loadLeagueData(currentLeague!, shows, pid)}
+                onBack={() => navigate('/')}
+                onUpdateRatings={() => loadLeagueData(currentLeague!, shows, selectedPeriodId || undefined)}
+                loading={loadingData}
+                onWaiverWire={() => navigate(`/league/${currentLeague.id}/draft`)}
+                leagueName={currentLeague.name}
+                onShowClick={setSelectedShow}
+                currentUserId={session.user.id}
+                leagueManagerId={currentLeague.created_by}
+                onRemoveMember={handleRemoveMember}
+                onDropShow={handleDropShow}
+                isDraftOver={isDraftOver}
+                cooldownExpiresAt={cooldownExpiresAt}
+                careerStats={careerStats}
+              />
+            ) : <Navigate to="/" />
+          } />
+
+          <Route path="/league/:leagueId/draft" element={
+            currentLeague ? (
+              <div className="max-w-[1600px] mx-auto mt-8 px-4">
+                <button
+                  onClick={() => navigate(`/league/${currentLeague.id}`)}
+                  className="mb-4 text-slate-500 hover:text-slate-900 flex items-center gap-2"
+                >
+                  &larr; Back to Dashboard
+                </button>
+                <div className="mb-6">
+                  <h2 className="text-3xl font-extrabold text-slate-900">{isDraftOver ? 'Waiver Wire' : 'Live Draft Room'}</h2>
+                  <p className="text-slate-500">{isDraftOver ? 'Claim available shows for next week.' : 'Pick up available shows for your roster.'}</p>
+                </div>
+
+                <div className="flex flex-col xl:flex-row gap-6 items-start">
+                  <div className="flex-1 min-w-0">
+                    <DraftBoard
+                      availableShows={getAvailableShows()}
+                      currentTeam={getCurrentUserTeam()}
+                      league={currentLeague}
+                      onDraft={handleDraftShow}
+                      isDrafting={true}
+                      onShowClick={setSelectedShow}
+                      isMyTurn={isMyTurn}
+                      currentDrafterName={currentDrafterInfo.name}
+                      picksUntilTurn={picksUntilTurn}
+                      lastPick={recentPicks[0]}
+                      addsRemaining={isDraftOver ? (currentLeague.max_adds_per_week || 3) - weeklyMovesCount : undefined}
+                      maxAdds={currentLeague.max_adds_per_week}
+                      viewMode={isDraftOver ? 'waiver' : 'draft'}
+                      cooldownExpiresAt={cooldownExpiresAt}
+                    />
                   </div>
 
-                  {/* Roster Display */}
-                  {getViewingTeam() && (
-                    <Standings teams={[getViewingTeam()!]} hideChart={true} compact={true} />
+                  {!isDraftOver && (
+                    <div className="w-full xl:w-96 shrink-0 flex flex-col gap-4 xl:sticky xl:top-24">
+                      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Viewing Roster</label>
+                        <div className="relative">
+                          <select
+                            value={viewingRosterId || ''}
+                            onChange={(e) => setViewingRosterId(e.target.value)}
+                            className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-lg pl-3 pr-8 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer hover:bg-slate-100"
+                          >
+                            {teams.map(t => (
+                              <option key={t.id} value={t.id}>
+                                {t.name} {t.id === session?.user?.id ? '(You)' : ''}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        </div>
+                      </div>
+                      {getViewingTeam() && (
+                        <Standings teams={[getViewingTeam()!]} hideChart={true} compact={true} />
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+              </div>
+            ) : <Navigate to="/" />
+          } />
+
+          {/* Legacy Invite Path Support */}
+          <Route path="/:inviteCode" element={<InviteRedirect />} />
+        </Routes>
       </main>
     </div>
   );
