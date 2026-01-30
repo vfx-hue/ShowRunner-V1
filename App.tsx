@@ -118,7 +118,7 @@ const App: React.FC = () => {
     const nextPickIndex = recentPicks.length + 1;
     const myId = session.user.id;
     let lookAhead = 0;
-    const maxSlots = (currentLeague?.cable_slots || 3) + (currentLeague?.streaming_slots || 3);
+    const maxSlots = (currentLeague?.cable_slots ?? 3) + (currentLeague?.streaming_slots ?? 3);
     const totalPossiblePicks = orderedMemberIds.length * maxSlots;
 
     while (lookAhead < totalPossiblePicks - recentPicks.length) {
@@ -344,7 +344,7 @@ const App: React.FC = () => {
       const stats = await api.getLeagueCareerStats(league.id);
       setCareerStats(stats);
 
-      const isLeagueFull = memberIds.length >= (league.max_members || 4);
+      const isLeagueFull = memberIds.length >= (league.max_members ?? 2);
       const hasDraftActivity = picks.length > 0;
 
       const now = new Date();

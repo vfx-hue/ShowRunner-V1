@@ -26,7 +26,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
     const [isDeleting, setIsDeleting] = useState(false);
 
     const [formState, setFormState] = useState({
-        max_members: league.max_members ?? 10,
+        max_members: league.max_members ?? 2,
         cable_slots: league.cable_slots ?? 3,
         streaming_slots: league.streaming_slots ?? 3,
         waiver_type: league.waiver_type || 'rolling',
@@ -47,7 +47,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
 
     useEffect(() => {
         setFormState({
-            max_members: league.max_members ?? 10,
+            max_members: league.max_members ?? 2,
             cable_slots: league.cable_slots ?? 3,
             streaming_slots: league.streaming_slots ?? 3,
             waiver_type: league.waiver_type || 'rolling',
@@ -185,7 +185,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">League Size</label>
                             <input
-                                type="number" max={10} min={2}
+                                type="number" min={2}
                                 disabled={!isManager || isDraftOver}
                                 value={formState.max_members}
                                 onChange={(e) => handleChange('max_members', e.target.value)}
@@ -204,6 +204,54 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                                 />
                             </div>
                         )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Network Slots</label>
+                            <input
+                                type="number" min={0}
+                                disabled={!isManager || isDraftOver}
+                                value={formState.cable_slots}
+                                onChange={(e) => handleChange('cable_slots', e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-sm font-bold disabled:bg-slate-50 disabled:text-slate-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Streaming Slots</label>
+                            <input
+                                type="number" min={0}
+                                disabled={!isManager || isDraftOver}
+                                value={formState.streaming_slots}
+                                onChange={(e) => handleChange('streaming_slots', e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-sm font-bold disabled:bg-slate-50 disabled:text-slate-500"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Waiver Type</label>
+                            <select
+                                disabled={!isManager}
+                                value={formState.waiver_type}
+                                onChange={(e) => handleChange('waiver_type', e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-sm font-bold disabled:bg-slate-50 disabled:text-slate-500"
+                            >
+                                <option value="rolling">Rolling</option>
+                                <option value="fcfs">First Come First Serve</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Waiver Cooldown (Days)</label>
+                            <input
+                                type="number" min={0}
+                                disabled={!isManager}
+                                value={formState.waiver_cooldown_days}
+                                onChange={(e) => handleChange('waiver_cooldown_days', e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-300 outline-none text-sm font-bold disabled:bg-slate-50 disabled:text-slate-500"
+                            />
+                        </div>
                     </div>
 
                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
