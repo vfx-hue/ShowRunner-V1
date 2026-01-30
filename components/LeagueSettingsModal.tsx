@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, X, Save, Tv, Shield, Loader2, UserMinus, Users } from 'lucide-react';
+import { Settings, X, Save, Tv, Shield, Loader2, UserMinus, Users, Trash2 } from 'lucide-react';
+
 import { League, UserProfile } from '../types';
 import * as api from '../services/api';
 
@@ -22,6 +23,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
     const [memberProfiles, setMemberProfiles] = useState<UserProfile[]>([]);
     const [loadingMembers, setLoadingMembers] = useState(false);
     const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const [formState, setFormState] = useState({
         max_members: league.max_members ?? 10,
@@ -134,6 +136,30 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
             console.error(e);
         } finally {
             setRemovingMemberId(null);
+        }
+    };
+
+    const handleDeleteLeague = async () => {
+        if (!isManager) return;
+
+        const confirmText = "DELETE";
+        const userInput = prompt(`WARNING: This will permanently delete the league and all its history.\n\nType "${confirmText}" to confirm:`);
+
+        if (userInput !== confirmText) {
+            if (userInput !== null) alert("Deletion cancelled. Text did not match.");
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            await api.deleteLeague(league.id);
+            alert("League deleted successfully.");
+            localStorage.removeItem('active_league_id');
+            window.location.reload();
+        } catch (e: any) {
+            console.error("Failed to delete league:", e);
+            alert(`Failed to delete league: ${e.message || "Unknown error"}`);
+            setIsDeleting(false);
         }
     };
 
@@ -279,6 +305,29 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
                         >
                             {saving ? "Saving..." : <><Save className="w-4 h-4" /> Save Changes</>}
                         </button>
+
+                    )}
+
+                    {isManager && (
+                        <div className="pt-6 border-t border-gray-100 flex justify-center">
+                            <button
+                                onClick={handleDeleteLeague}
+                                disabled={isDeleting || saving}
+                                className="flex items-center gap-2 text-red-500 hover:text-red-600 text-xs font-bold uppercase tracking-widest px-4 py-2 hover:bg-red-50 rounded-lg transition-all"
+                            >
+                                {isDeleting ? (
+                                    <>
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 className="w-3 h-3" />
+                                        Delete League
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
