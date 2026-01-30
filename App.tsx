@@ -516,7 +516,8 @@ const App: React.FC = () => {
     let available = shows.filter(s => !draftedIds.has(s.id));
 
     // Enforcement: If we are in DRAFT view and have a current team, filter by slots
-    if (view === 'DRAFT' && currentLeague) {
+    // ONLY enforce hiding during the live draft. In waiver mode, we show everything because users can DROP to ADD.
+    if (view === 'DRAFT' && currentLeague && !isDraftOver) {
       const myTeam = getCurrentUserTeam();
       if (myTeam) {
         const cableCount = myTeam.roster.filter(s => s.category === 'cable').length;
