@@ -436,8 +436,11 @@ const App: React.FC = () => {
         : (currentLeague.streaming_slots || 3);
 
       if (currentCategoryCount >= limit) {
-        alert(`You have reached the limit for ${show.category === 'cable' ? 'Cable/Broadcast' : 'Streaming'} shows (${limit}).`);
-        return;
+        if (!isDraftOver) {
+          alert(`You have reached the limit for ${show.category === 'cable' ? 'Cable/Broadcast' : 'Streaming'} shows (${limit}).`);
+          return;
+        }
+        // If draft is over (waiver mode), allow proceeding to open the Add/Drop modal
       }
     }
 
@@ -602,7 +605,8 @@ const App: React.FC = () => {
             setShowWaiverModal(false);
             setWaiverShowToAdd(null);
           }}
-          maxRosterSize={(currentLeague?.cable_slots || 3) + (currentLeague?.streaming_slots || 3)}
+          cableSlots={currentLeague?.cable_slots || 3}
+          streamingSlots={currentLeague?.streaming_slots || 3}
         />
       )}
 

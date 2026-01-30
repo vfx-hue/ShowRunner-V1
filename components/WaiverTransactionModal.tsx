@@ -7,7 +7,8 @@ interface WaiverTransactionModalProps {
     currentTeam: Team;
     onConfirm: (showToDropId: string | null) => Promise<void>;
     onClose: () => void;
-    maxRosterSize?: number;
+    cableSlots?: number;
+    streamingSlots?: number;
 }
 
 const WaiverTransactionModal: React.FC<WaiverTransactionModalProps> = ({
@@ -15,16 +16,57 @@ const WaiverTransactionModal: React.FC<WaiverTransactionModalProps> = ({
     currentTeam,
     onConfirm,
     onClose,
-    maxRosterSize = 6
+    cableSlots = 3,
+    streamingSlots = 3
 }) => {
     const [selectedDropId, setSelectedDropId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const isRosterFull = currentTeam.roster.length >= maxRosterSize;
-    const canConfirm = !isRosterFull || selectedDropId !== null;
+    // Calculate limit status
+    const categoryUpper = showToAdd.category === 'streaming' ? 'Streaming' : 'Cable';
+    const limit = showToAdd.category === 'streaming' ? streamingSlots : cableSlots;
+    const currentCount = currentTeam.roster.filter(s => s.category === showToAdd.category).length;
+
+    // Check if adding this show (without dropping one of same category) would exceed ALL limits
+    // We need to check if we are dropping a show of the SAME category to free up space.
+
+    const isCategoryFull = currentCount >= limit;
+    const isTotalFull = currentTeam.roster.length >= (cableSlots + streamingSlots);
+
+    const willBeValid = () => {
+        if (!isCategoryFull && !isTotalFull) return true;
+
+        // If we drop someone:
+        if (selectedDropId) {
+            const dropShow = currentTeam.roster.find(s => s.id === selectedDropId);
+            if (!dropShow) return false;
+
+            // New counts
+            let newCableCount = currentTeam.roster.filter(s => s.category === 'cable').length;
+            let newStreamingCount = currentTeam.roster.filter(s => s.category === 'streaming').length;
+
+            // Apply drop
+            if (dropShow.category === 'cable') newCableCount--;
+            else newStreamingCount--;
+
+            // Apply add
+            if (showToAdd.category === 'cable') newCableCount++;
+            else newStreamingCount++;
+
+            if (newCableCount > cableSlots) return false;
+            if (newStreamingCount > streamingSlots) return false;
+
+            return true;
+        }
+
+        return false;
+    };
+
+    const isValid = willBeValid();
+    const mustDrop = isCategoryFull || isTotalFull;
 
     const handleConfirm = async () => {
-        if (!canConfirm) return;
+        if (!isValid) return;
         setIsSubmitting(true);
         try {
             await onConfirm(selectedDropId);
@@ -61,23 +103,29 @@ const WaiverTransactionModal: React.FC<WaiverTransactionModalProps> = ({
                             <div className={`font-bold truncate ${selectedDropId ? 'text-slate-900' : 'text-slate-400 italic'}`}>
                                 {selectedDropId
                                     ? currentTeam.roster.find(s => s.id === selectedDropId)?.title
-                                    : (isRosterFull ? 'Select a show...' : 'None (Open Spot)')}
+                                    : (mustDrop ? 'Select a show...' : 'None (Open Spot)')}
                             </div>
                         </div>
                     </div>
 
                     {/* Alert if Roster Full */}
-                    {isRosterFull && !selectedDropId && (
+                    {mustDrop && !isValid && (
                         <div className="flex items-start gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg text-sm border border-amber-100">
                             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                            <p>Your roster is full. You must select a show to drop to complete this transaction.</p>
+                            <p>
+                                {isTotalFull
+                                    ? "Your roster is full (Total slots). Drop a show."
+                                    : isCategoryFull
+                                        ? `You reached the limit for ${categoryUpper} shows (${limit}). Drop a ${categoryUpper} show.`
+                                        : "You must drop a show to complete this transaction."}
+                            </p>
                         </div>
                     )}
 
                     {/* Drop Selection */}
                     <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-3">
-                            Select Show to Drop {isRosterFull ? '(Required)' : '(Optional)'}
+                            Select Show to Drop {mustDrop ? '(Required)' : '(Optional)'}
                         </label>
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                             {currentTeam.roster.map(show => (
@@ -85,8 +133,8 @@ const WaiverTransactionModal: React.FC<WaiverTransactionModalProps> = ({
                                     key={show.id}
                                     onClick={() => setSelectedDropId(show.id === selectedDropId ? null : show.id)}
                                     className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${selectedDropId === show.id
-                                            ? 'bg-red-50 border-red-200 ring-1 ring-red-200'
-                                            : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                        ? 'bg-red-50 border-red-200 ring-1 ring-red-200'
+                                        : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -117,7 +165,7 @@ const WaiverTransactionModal: React.FC<WaiverTransactionModalProps> = ({
                     </button>
                     <button
                         onClick={handleConfirm}
-                        disabled={!canConfirm || isSubmitting}
+                        disabled={!isValid || isSubmitting}
                         className="px-6 py-2 bg-slate-900 text-white font-bold text-sm rounded-lg hover:bg-slate-800 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                     >
                         {isSubmitting ? 'Processing...' : 'Confirm Transaction'}
