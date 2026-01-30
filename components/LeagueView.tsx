@@ -494,10 +494,10 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                   <table className="w-full text-sm text-left border-separate border-spacing-0 min-w-[500px]">
                     <thead>
                       <tr className="bg-slate-50/50">
-                        <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest border-b border-slate-100">Show</th>
-                        <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Weekly</th>
-                        <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Total</th>
-                        <th className="px-6 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Action</th>
+                        <th className="px-4 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest border-b border-slate-100">Show</th>
+                        <th className="px-4 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Weekly</th>
+                        <th className="px-4 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Total</th>
+                        <th className="px-4 py-3 font-black text-[11px] text-slate-500 uppercase tracking-widest text-right border-b border-slate-100">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -507,13 +507,13 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                           onClick={() => onShowClick(show)}
                           className="group/row hover:bg-slate-50/80 transition-colors cursor-pointer"
                         >
-                          <td className="px-6 py-5">
-                            <div className="font-black text-slate-800 group-hover/row:text-purple-700 transition-colors truncate max-w-[160px] text-base mb-0.5">{show.title}</div>
-                            <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 uppercase tracking-wide">
+                          <td className="px-4 py-4">
+                            <div className="text-[12px] font-mono font-bold text-slate-700 group-hover/row:text-purple-700 transition-colors truncate max-w-[100px] mb-0.5">{show.title}</div>
+                            <div className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5 uppercase tracking-wide">
                               {show.category === 'streaming' ? (
-                                <Smartphone className="w-3.5 h-3.5 text-purple-500" />
+                                <Smartphone className="w-3 h-3 text-purple-500" />
                               ) : (
-                                <Tv className="w-3.5 h-3.5 text-blue-500" />
+                                <Tv className="w-3 h-3 text-blue-500" />
                               )}
                               {show.network}
                             </div>
