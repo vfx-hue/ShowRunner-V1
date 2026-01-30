@@ -431,7 +431,7 @@ const AppContent: React.FC = () => {
       const isTimePassed = now >= draftTime;
 
       if (!isLeagueFull || (!isTimePassed && !hasDraftActivity)) {
-        setView('WAITING_ROOM');
+        navigate(`/league/${league.id}/waiting`);
         setLoadingData(false);
         return;
       }
@@ -532,9 +532,13 @@ const AppContent: React.FC = () => {
         if (!isLeagueFull || (!isTimePassed && !hasDraftActivity)) {
           navigate(`/league/${league.id}/waiting`);
         } else {
-          navigate(`/league/${league.id}`);
+          navigate(`/league/${league.id}/dashboard`);
         }
       }
+
+      // Refresh leagues list to ensure the new league is present
+      const updatedLeagues = await api.fetchUserLeagues(session!.user.id);
+      setUserLeagues(updatedLeagues);
 
 
     } catch (e: any) {

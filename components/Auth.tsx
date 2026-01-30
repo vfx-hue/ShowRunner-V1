@@ -122,7 +122,8 @@ const Auth: React.FC = () => {
         )}
 
         <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-6 max-w-4xl leading-tight">
-          Fantasy Sports for <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">TV Addicts</span>
+          Fantasy Sports for
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">TV Addicts</span>
         </h1>
 
         <p className="text-lg md:text-xl text-slate-500 max-w-2xl mb-10 leading-relaxed">
