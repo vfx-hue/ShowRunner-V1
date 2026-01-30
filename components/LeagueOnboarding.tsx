@@ -74,10 +74,60 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
     return now > draftTime;
   };
 
+  const getWelcomeHero = () => {
+    // Pick the most relevant league: active league or first one
+    const activeLeagueId = localStorage.getItem('active_league_id');
+    const heroLeague = existingLeagues.find(l => l.id === activeLeagueId) || existingLeagues[0];
+
+    if (!heroLeague) return null;
+
+    return (
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-10 text-white shadow-2xl mb-12 group">
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-black uppercase tracking-widest mb-4">
+              <CheckCircle className="w-3 h-3" /> Welcome Back
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-2">
+              Values Are <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">Up 12%</span>
+            </h2>
+            <p className="opacity-60 font-medium text-lg max-w-lg leading-relaxed">
+              You are currently ranked <span className="text-white font-bold">#{heroLeague.userRank}</span> in <span className="text-white font-bold">{heroLeague.name}</span>.
+              The draft board is heating up.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 min-w-[120px]">
+              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-purple-300 mb-1">My Points</p>
+              <p className="text-3xl font-black tracking-tight">{heroLeague.userPoints?.toLocaleString()}</p>
+            </div>
+            <button
+              onClick={() => onLeagueSelected(heroLeague)}
+              className="bg-white text-slate-900 px-8 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-purple-50 transition-colors shadow-xl"
+            >
+              Enter League
+            </button>
+          </div>
+        </div>
+
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 -mr-24 -mt-24 w-96 h-96 bg-purple-600/30 rounded-full blur-[80px] group-hover:bg-purple-600/40 transition-colors duration-1000"></div>
+        <div className="absolute bottom-0 left-0 -ml-24 -mb-24 w-80 h-80 bg-indigo-600/20 rounded-full blur-[80px]"></div>
+      </div>
+    );
+  };
+
   return (
-    <div className="max-w-4xl mx-auto mt-12 px-4 pb-20">
-      <h2 className="text-4xl font-black text-slate-900 mb-2 text-center tracking-tight">Your Leagues</h2>
-      <p className="text-slate-500 text-center mb-10 font-medium">Select a league to manage your roster or join the draft.</p>
+    <div className="max-w-5xl mx-auto mt-8 px-6 pb-20">
+      {getWelcomeHero()}
+
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Your Leagues</h2>
+        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-lg">
+          {existingLeagues.length} Active
+        </div>
+      </div>
 
       {existingLeagues.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
@@ -102,6 +152,28 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, onLeagueSel
                     </div>
                   )}
                 </div>
+
+                {/* Top 3 Preview */}
+                {l.top3 && l.top3.length > 0 && (
+                  <div className="my-4 py-3 border-t border-b border-slate-50">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Leaderboard Preview</p>
+                    <div className="space-y-1.5">
+                      {l.top3.map((t: any, i: number) => (
+                        <div key={t.user_id} className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-4 h-4 flex items-center justify-center rounded text-[9px] font-bold ${i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                              {i + 1}
+                            </span>
+                            <span className="font-bold text-slate-700 truncate max-w-[120px]">
+                              {t.profile?.display_name || 'Player'}
+                            </span>
+                          </div>
+                          <span className="font-mono font-bold text-slate-400">{t.adjusted_total_points.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex justify-between items-end mt-4">
                   <div>

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Show, Team, League } from '../types';
-import { Star, Tv, Clock, Lock, Rocket, Filter, ArrowUpAz, TrendingUp, Users, Trophy } from 'lucide-react';
+import { Star, Tv, Clock, Lock, Rocket, Filter, TrendingUp, Users, Trophy } from 'lucide-react';
 
 interface DraftBoardProps {
   availableShows: Show[];
@@ -35,6 +36,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   picksUntilTurn = 0,
   lastPick = null
 }) => {
+  const navigate = useNavigate();
   const [sortBy, setSortBy] = useState<'hype' | 'viewers'>('hype');
   const [filterNetwork, setFilterNetwork] = useState<string>('All');
   const [timeLeft, setTimeLeft] = useState<string>('');
@@ -119,6 +121,14 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         <div className="flex flex-col gap-2">
           {viewMode !== 'waiver' && (
             <>
+              <div className="flex items-center gap-4 mb-2">
+                <button
+                  onClick={() => navigate(`/league/${league?.id}`)}
+                  className="text-xs font-bold text-slate-500 hover:text-white transition-colors flex items-center gap-1 uppercase tracking-widest"
+                >
+                  ← Back to League
+                </button>
+              </div>
               <h2 className="text-3xl font-black text-white flex items-center gap-3 tracking-tight">
                 Draft Pool
                 <span className="text-[10px] font-black bg-indigo-500 text-white px-3 py-1 rounded-full uppercase tracking-widest">
@@ -153,6 +163,22 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+          {/* Sort Buttons */}
+          <div className="flex bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-2xl p-1">
+            <button
+              onClick={() => setSortBy('hype')}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${sortBy === 'hype' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            >
+              Hype
+            </button>
+            <button
+              onClick={() => setSortBy('viewers')}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${sortBy === 'viewers' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            >
+              Viewers
+            </button>
+          </div>
+
           {/* Filter */}
           <div className="flex items-center gap-2 bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-2xl px-4 py-2 hover:border-slate-600 transition-colors">
             <Filter className="w-4 h-4 text-slate-400" />
@@ -180,11 +206,41 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               </div>
               <div>
                 <span className={`block text-[9px] font-black uppercase tracking-[0.2em] ${isMyTurn ? 'text-green-100' : 'text-slate-500'}`}>
-                  {isMyTurn ? "Action Required" : "Current Turn"}
+                  {isMyTurn ? "You're Up" : "On The Clock"}
                 </span>
                 <span className={`block font-black text-sm tracking-tight ${isMyTurn ? 'text-white' : 'text-slate-300'}`}>
-                  {isMyTurn ? "CHOOSE A SHOW" : (currentDrafterName || 'Waiting...')}
+                  {isMyTurn ? "YOUR TURN" : (currentDrafterName || 'Waiting...')}
                 </span>
+              </div>
+            </div>
+          )}
+
+          {!isMyTurn && viewMode === 'draft' && picksUntilTurn > 0 && (
+            <div className="bg-slate-800/80 border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3">
+              <Users className="w-4 h-4 text-blue-400" />
+              <div>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">Picks Until Your Turn</span>
+                <span className="block font-black text-sm text-white">{picksUntilTurn}</span>
+              </div>
+            </div>
+          )}
+
+          {lastPick && viewMode === 'draft' && (
+            <div className="bg-slate-900/50 border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3">
+              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400/20" />
+              <div>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-500">Last Pick</span>
+                <span className="block font-bold text-xs text-white truncate max-w-[100px]">{lastPick.show_name}</span>
+              </div>
+            </div>
+          )}
+
+          {viewMode === 'draft' && addsRemaining !== undefined && (
+            <div className="bg-slate-900/50 border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3">
+              <TrendingUp className="w-4 h-4 text-purple-400" />
+              <div>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-500">Adds Remaining</span>
+                <span className="block font-bold text-xs text-white">{addsRemaining}/{maxAdds}</span>
               </div>
             </div>
           )}
@@ -369,7 +425,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               </h2>
               <p className="text-xl text-slate-500 font-bold mb-10 leading-relaxed px-4">Your legendary roster has been assembled. It's time to win the season.</p>
               <button
-                onClick={() => window.location.href = '/'}
+                onClick={() => navigate(`/league/${league?.id}`)}
                 className="w-full bg-slate-900 text-white font-black py-6 rounded-[2rem] text-xl hover:bg-purple-600 transition-all hover:scale-105 active:scale-95 shadow-2xl flex items-center justify-center gap-3"
               >
                 ENTER ARENA <Rocket className="w-6 h-6" />

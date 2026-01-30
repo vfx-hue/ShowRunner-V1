@@ -3,7 +3,6 @@ import { Show, Team, ViewState, League, STANDARD_NETWORK_MULTIPLIER } from './ty
 import * as api from './services/api';
 import { supabase } from './lib/supabase';
 import Navbar from './components/Navbar';
-import Dashboard from './components/Dashboard';
 import LeagueView from './components/LeagueView';
 import Auth from './components/Auth';
 import LeagueOnboarding from './components/LeagueOnboarding';
@@ -520,26 +519,13 @@ const AppContent: React.FC = () => {
         setLastWaiverAddDate(latestAdd);
       }
 
-      // 6. Navigation Logic:
-      // In professional routing, we navigate based on the current state and parameters.
-      if (location.pathname === '/' || location.pathname === '/auth') {
-        const isLeagueFull = memberIds.length >= (league.max_members ?? 4);
-        const hasDraftActivity = picks.length > 0;
-        const now = new Date();
-        const draftTime = league.draft_start_time ? new Date(league.draft_start_time) : new Date();
-        const isTimePassed = now >= draftTime;
+      // 6. Navigation Logic REMOVED from data loading!
+      // The UI component calling this should decide where to go if needed.
 
-        if (!isLeagueFull || (!isTimePassed && !hasDraftActivity)) {
-          navigate(`/league/${league.id}/waiting`);
-        } else {
-          navigate(`/league/${league.id}/dashboard`);
-        }
-      }
+      // Only on explicit "JOIN" (via onboarding hook) do we want to auto-navigate, 
+      // but we will let the Onboarding component handle that based on the promise resolution.
 
-      // Refresh leagues list to ensure the new league is present
-      const updatedLeagues = await api.fetchUserLeagues(session!.user.id);
-      setUserLeagues(updatedLeagues);
-
+      // We just return the data now or let React state update trigger re-renders.
 
     } catch (e: any) {
       console.error(e);
@@ -600,7 +586,7 @@ const AppContent: React.FC = () => {
       }
 
       await api.makePick(currentLeague.id, session.user.id, show, isWaiver);
-      // Refresh to update counts
+      // Refresh to update counts - NO NAVIGATION will happen here now
       await loadLeagueData(currentLeague);
     } catch (e) {
       alert("Failed to draft/add show.");
@@ -749,7 +735,25 @@ const AppContent: React.FC = () => {
             <LeagueOnboarding
               userId={session.user.id}
               existingLeagues={userLeagues}
-              onLeagueSelected={(league) => loadLeagueData(league)}
+              onLeagueSelected={async (league) => {
+                await loadLeagueData(league);
+                // Decide Navigation HERE, not in loadLeagueData
+                // We need to check if we should go to waiting room or main view
+                const isLeagueFull = (league.userRank && league.totalTeams) ? league.totalTeams >= (league.max_members ?? 4) : false; // Rough check, improved by using detailed stats if available
+
+                // Simpler check: Just go to the league view. The LeagueView component checks if it should redirect to waiting room?
+                // Actually, let's keep it simple: Go to League Home
+                // But we must handle the 'Waiting Room' case if the draft hasn't started.
+                const now = new Date();
+                const draftTime = league.draft_start_time ? new Date(league.draft_start_time) : new Date();
+                const isTimePassed = now >= draftTime;
+
+                if (!isTimePassed) {
+                  navigate(`/league/${league.id}/waiting`);
+                } else {
+                  navigate(`/league/${league.id}`);
+                }
+              }}
               isJoining={loadingData}
             />
           } />
@@ -790,30 +794,6 @@ const AppContent: React.FC = () => {
                 onRefresh={() => loadLeagueData(currentLeague)}
                 currentUserId={session.user.id}
               />
-            ) : <Navigate to="/" />
-          } />
-
-          <Route path="/league/:leagueId/dashboard" element={
-            currentLeague ? (
-              <>
-                <div className="flex justify-between items-center max-w-2xl mx-auto mt-8 px-4">
-                  <span className="text-sm font-bold text-slate-400">League Code: {currentLeague.code}</span>
-                  <button
-                    onClick={() => navigate(`/league/${currentLeague.id}/draft`)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow-md transition-colors"
-                  >
-                    Enter Draft Room
-                  </button>
-                </div>
-                <Dashboard
-                  teams={teams}
-                  onSelectLeague={() => navigate(`/league/${currentLeague.id}`)}
-                  recentPicks={recentPicks}
-                  currentUserId={session.user.id}
-                  showCooldown={!!cooldownExpiresAt}
-                  league={currentLeague}
-                />
-              </>
             ) : <Navigate to="/" />
           } />
 

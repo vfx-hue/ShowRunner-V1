@@ -700,11 +700,24 @@ export const fetchUserLeagues = async (userId: string) => {
     try {
       const leaderboard = await getLeagueLeaderboard(l.id);
       const userStats = leaderboard.find((s: any) => s.user_id === userId);
+
+      // Get Top 3 for "Standings" preview
+      // We need profiles for them
+      const top3 = leaderboard.slice(0, 3);
+      const top3Ids = top3.map(t => t.user_id);
+      const { data: top3Profiles } = await supabase.from('profiles').select('id, initials, color').in('id', top3Ids);
+
+      const top3WithProfiles = top3.map(t => ({
+        ...t,
+        profile: top3Profiles?.find(p => p.id === t.user_id) || { initials: '??', color: '#cbd5e1' }
+      }));
+
       return {
         ...l,
         userPoints: userStats ? userStats.adjusted_total_points : 0,
         userRank: leaderboard.findIndex((s: any) => s.user_id === userId) + 1,
-        totalTeams: leaderboard.length
+        totalTeams: leaderboard.length,
+        top3: top3WithProfiles
       };
     } catch (e) {
       return l;
