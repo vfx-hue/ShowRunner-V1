@@ -27,10 +27,12 @@ when press sync data have a little animation adding whatever the new data is on 
 
 change leaderboard to be % better then rest of league min 4 ppl
 make sure veertyhting else works
-change default to be no redraft after matchup changes
 
 future ideas:
-books
+books sales
 music - every 2 weeks rolling new songs
 ytube chnnels
 stripe startups - random names assigned random group of 100 startups in pool no waiver wire mayeb trades, in draft cant see revenue only other indicators and name in draft is random
+video game sales
+podcast downloads
+app sales

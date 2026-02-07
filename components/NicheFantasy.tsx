@@ -36,7 +36,7 @@ const NicheFantasy: React.FC = () => {
                 </div>
 
                 <div className="flex justify-center gap-4">
-                    <a href="mailto:hello@nichefantasy.com" className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm hover:scale-105 transition-transform">
+                    <a href="mailto:ethanmasel@gmail.com" className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm hover:scale-105 transition-transform">
                         Contact Us
                     </a>
                 </div>
