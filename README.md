@@ -24,6 +24,13 @@ View your app in AI Studio: https://ai.studio/apps/drive/14phfpPcQxIL6KZvM4rI_2n
 
 Tmrw problems:
 when press sync data have a little animation adding whatever the new data is on the chart like kalshi does where the numbers float up 
-after draft is over, dont have it say invite code under league name have it list out the current scores on the your leagues page! it can be longer just a small socreboard
-figure out matchup endings and continuation of leagues
-show past data on draft recap screen but start collecting scores from the moment the draft ends - change top teams to be average per show
+
+change leaderboard to be % better then rest of league min 4 ppl
+make sure veertyhting else works
+change default to be no redraft after matchup changes
+
+future ideas:
+books
+music - every 2 weeks rolling new songs
+ytube chnnels
+stripe startups - random names assigned random group of 100 startups in pool no waiver wire mayeb trades, in draft cant see revenue only other indicators and name in draft is random

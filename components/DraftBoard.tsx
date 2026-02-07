@@ -252,62 +252,64 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
       {viewMode === 'waiver' ? (
         <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-900/50 text-slate-400 text-xs uppercase font-black tracking-wider">
-              <tr>
-                <th className="px-6 py-4">Show Details</th>
-                <th className="px-6 py-4 text-center">Network</th>
-                <th className="px-6 py-4 text-center">Rating</th>
-                <th className="px-6 py-4 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-700">
-              {filteredAndSortedShows.map((show) => (
-                <tr key={show.id} className="hover:bg-slate-700/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-4">
-                      {show.posterUrl && (
-                        <img src={show.posterUrl} alt={show.title} className="w-10 h-14 object-cover rounded shadow-md" />
-                      )}
-                      <div>
-                        <div className="font-bold text-white text-base group-hover:text-purple-400 transition-colors">{show.title}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{show.category === 'streaming' ? 'Streaming' : 'Cable'}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-600">
-                      {show.network}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-1.5 font-mono font-black text-slate-200">
-                      {show.cumulativeRating > 0 ? (
-                        <>
-                          <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                          {show.cumulativeRating.toLocaleString()}
-                        </>
-                      ) : (
-                        <>
-                          <Rocket className="w-3.5 h-3.5 text-purple-400" />
-                          {show.hype}
-                        </>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => onDraft(show)}
-                      disabled={!isDrafting || !isMyTurn}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-6 rounded-lg shadow-sm active:scale-95 transition-all text-xs uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Claim
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm min-w-[600px]">
+              <thead className="bg-slate-900/50 text-slate-400 text-xs uppercase font-black tracking-wider">
+                <tr>
+                  <th className="px-6 py-4">Show Details</th>
+                  <th className="px-6 py-4 text-center">Network</th>
+                  <th className="px-6 py-4 text-center">Rating</th>
+                  <th className="px-6 py-4 text-right">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-700">
+                {filteredAndSortedShows.map((show) => (
+                  <tr key={show.id} className="hover:bg-slate-700/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        {show.posterUrl && (
+                          <img src={show.posterUrl} alt={show.title} className="w-10 h-14 object-cover rounded shadow-md" />
+                        )}
+                        <div>
+                          <div className="font-bold text-white text-base group-hover:text-purple-400 transition-colors">{show.title}</div>
+                          <div className="text-xs text-slate-500 mt-0.5">{show.category === 'streaming' ? 'Streaming' : 'Cable'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-600">
+                        {show.network}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-1.5 font-mono font-black text-slate-200">
+                        {show.cumulativeRating > 0 ? (
+                          <>
+                            <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                            {show.cumulativeRating.toLocaleString()}
+                          </>
+                        ) : (
+                          <>
+                            <Rocket className="w-3.5 h-3.5 text-purple-400" />
+                            {show.hype}
+                          </>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => onDraft(show)}
+                        disabled={!isDrafting || !isMyTurn}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-6 rounded-lg shadow-sm active:scale-95 transition-all text-xs uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Claim
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 max-h-[650px] overflow-y-auto pr-2 custom-scrollbar">

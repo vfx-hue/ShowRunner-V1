@@ -17,7 +17,7 @@ const Standings: React.FC<StandingsProps> = ({ teams, hideChart = false, compact
     <div className="space-y-10 animate-fade-in-up">
       {/* Chart Section */}
       {!hideChart && (
-        <div className="premium-card p-8">
+        <div className="premium-card p-4 md:p-8">
           <div className="flex justify-between items-end mb-8">
             <div>
               <p className="text-[10px] uppercase font-black text-purple-500 tracking-[0.2em] mb-1">Performance</p>

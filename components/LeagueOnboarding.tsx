@@ -96,9 +96,11 @@ const LeagueOnboarding: React.FC<LeagueOnboardingProps> = ({ userId, userName, o
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 min-w-[120px]">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-white/10 min-w-[100px] md:min-w-[120px] max-w-[200px]">
               <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-purple-300 mb-1">My Points</p>
-              <p className="text-3xl font-black tracking-tight">{heroLeague.userPoints?.toLocaleString()}</p>
+              <p className="text-xl md:text-3xl font-black tracking-tight truncate" title={heroLeague.userPoints?.toLocaleString()}>
+                {Math.round(heroLeague.userPoints || 0).toLocaleString()}
+              </p>
             </div>
             <button
               onClick={() => onLeagueSelected(heroLeague)}

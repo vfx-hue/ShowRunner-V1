@@ -174,7 +174,8 @@ const LeagueView: React.FC<LeagueViewProps> = ({
         team.roster.forEach(show => {
           show.viewershipHistory?.forEach(entry => {
             const entryTs = normalizeDate(entry.rating_date);
-            if (entryTs && entryTs <= ts) {
+            // ADDED: Check if entryTs > draftTimeTs
+            if (entryTs && entryTs <= ts && (!draftTimeTs || entryTs > draftTimeTs)) {
               const multiplier = show.category === 'streaming' ? 1 : STANDARD_NETWORK_MULTIPLIER;
               cumulativeForTeamAtTs += (entry.viewers || 0) * multiplier;
             }
@@ -298,7 +299,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
 
       <div className="grid grid-cols-1 gap-8">
         {/* CHART SECTION (Premium Area Chart) */}
-        <div className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative group">
+        <div className="bg-white rounded-[2rem] p-4 md:p-8 shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative group">
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
               <div>
@@ -451,7 +452,7 @@ const LeagueView: React.FC<LeagueViewProps> = ({
                 className={`premium-card overflow-hidden flex flex-col ${hoveredTeamId === team.id ? 'shadow-2xl shadow-slate-200 -translate-y-1 ring-2 ring-purple-100/50' : ''}`}
               >
                 {/* Team Header */}
-                <div className="px-6 py-6 border-b border-slate-50 flex justify-between items-center bg-gradient-to-br from-white to-slate-50/30">
+                <div className="px-4 py-4 md:px-6 md:py-6 border-b border-slate-50 flex justify-between items-center bg-gradient-to-br from-white to-slate-50/30">
                   <div className="flex items-center gap-4">
                     <div
                       className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-lg transition-transform"

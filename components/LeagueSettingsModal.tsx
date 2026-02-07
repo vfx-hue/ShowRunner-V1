@@ -32,7 +32,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
         waiver_type: league.waiver_type || 'rolling',
         draft_start_time: '',
         waiver_cooldown_days: league.waiver_cooldown_days ?? 7,
-        redraft_every_period: league.redraft_every_period ?? true
+        redraft_every_period: league.redraft_every_period ?? false
     });
 
     const isManager = league.created_by === currentUserId;
@@ -53,7 +53,7 @@ const LeagueSettingsModal: React.FC<LeagueSettingsModalProps> = ({
             waiver_type: league.waiver_type || 'rolling',
             draft_start_time: formatForInput(league.draft_start_time),
             waiver_cooldown_days: league.waiver_cooldown_days ?? 7,
-            redraft_every_period: league.redraft_every_period ?? true
+            redraft_every_period: league.redraft_every_period ?? false
         });
     }, [league]);
 

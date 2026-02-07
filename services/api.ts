@@ -444,7 +444,7 @@ export const createLeague = async (userId: string, name: string, draftStartTime:
       waiver_type: 'rolling_priority',
       max_adds_per_week: 3,
       waiver_cooldown_days: 7,
-      redraft_every_period: true
+      redraft_every_period: false
     })
     .select()
     .single();
@@ -705,7 +705,7 @@ export const fetchUserLeagues = async (userId: string) => {
       // We need profiles for them
       const top3 = leaderboard.slice(0, 3);
       const top3Ids = top3.map(t => t.user_id);
-      const { data: top3Profiles } = await supabase.from('profiles').select('id, initials, color').in('id', top3Ids);
+      const { data: top3Profiles } = await supabase.from('profiles').select('id, initials, color, display_name').in('id', top3Ids);
 
       const top3WithProfiles = top3.map(t => ({
         ...t,
