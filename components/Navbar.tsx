@@ -58,9 +58,9 @@ const Navbar: React.FC<NavbarProps> = ({
             <button onClick={onNavigateLeaderboard} className="hover:text-purple-600 transition-colors flex items-center gap-1 hover-lift">
               <Trophy className="w-4 h-4" /> Leaderboard
             </button>
-            <button onClick={onNavigateAdmin} className="hover:text-purple-600 transition-colors flex items-center gap-1 hover-lift">
+            {/* <button onClick={onNavigateAdmin} className="hover:text-purple-600 transition-colors flex items-center gap-1 hover-lift">
               <Users className="w-4 h-4" /> Top Teams
-            </button>
+            </button> */}
             <button onClick={onNavigateHowToPlay} className="hover:text-purple-600 transition-colors flex items-center gap-1 hover-lift">
               <HelpCircle className="w-4 h-4" /> How to Play
             </button>
@@ -150,9 +150,9 @@ const Navbar: React.FC<NavbarProps> = ({
             <button onClick={() => handleMobileNav(onNavigateLeaderboard)} className="text-2xl font-black text-slate-800 hover:text-purple-600 text-left flex items-center gap-3">
               <Trophy className="w-6 h-6 text-purple-500" /> Leaderboard
             </button>
-            <button onClick={() => handleMobileNav(onNavigateAdmin)} className="text-2xl font-black text-slate-800 hover:text-purple-600 text-left flex items-center gap-3">
+            {/* <button onClick={() => handleMobileNav(onNavigateAdmin)} className="text-2xl font-black text-slate-800 hover:text-purple-600 text-left flex items-center gap-3">
               <Users className="w-6 h-6 text-purple-500" /> Top Teams
-            </button>
+            </button> */}
             <button onClick={() => handleMobileNav(onNavigateHowToPlay)} className="text-2xl font-black text-slate-800 hover:text-purple-600 text-left flex items-center gap-3">
               <HelpCircle className="w-6 h-6 text-purple-500" /> How to Play
             </button>

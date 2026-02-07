@@ -15,6 +15,8 @@ import GlobalTeamLeaderboard from './components/GlobalTeamLeaderboard';
 import Profile from './components/Profile';
 import WaiverTransactionModal from './components/WaiverTransactionModal';
 import HowToPlay from './components/HowToPlay';
+import Footer from './components/Footer';
+import NicheFantasy from './components/NicheFantasy';
 import { UserProfile } from './types';
 import { Loader2, ChevronDown } from 'lucide-react';
 import {
@@ -885,10 +887,14 @@ const AppContent: React.FC = () => {
             ) : <Navigate to="/" />
           } />
 
+
+          <Route path="/niche-fantasy" element={<NicheFantasy />} />
+
           {/* Legacy Invite Path Support */}
           <Route path="/:inviteCode" element={<InviteRedirect />} />
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 };
